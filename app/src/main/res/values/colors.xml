@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="jikelv">#77db93</color>
+    <color name="lpink">#f9b8c5</color>
+    <color name="lblue">#aacded</color>
+    <color name="tfblue">#5fcdcc</color>
+</resources>
