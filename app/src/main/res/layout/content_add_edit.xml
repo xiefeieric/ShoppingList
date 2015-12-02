@@ -10,5 +10,17 @@
     tools:context="uk.me.feixie.shoppinglist.activity.AddEditActivity"
     tools:showIn="@layout/activity_add_edit">
 
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/rvAddEdit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
+    </android.support.v7.widget.RecyclerView>
+
+    <TextView
+        android:id="@+id/tvTotalPrice"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Total Price: "/>
 
 </LinearLayout>

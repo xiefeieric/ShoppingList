@@ -19,6 +19,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.animation.AnimationUtils;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
+import android.widget.SpinnerAdapter;
 
 import uk.me.feixie.shoppinglist.R;
 import uk.me.feixie.shoppinglist.utils.UIUtils;
@@ -26,7 +29,13 @@ import uk.me.feixie.shoppinglist.utils.UIUtils;
 public class AddEditActivity extends AppCompatActivity {
 
     private Dialog mDialog;
+    private int id;
     private TextInputLayout tiName;
+    private TextInputLayout tiCategory;
+    private TextInputLayout tiPrice;
+    private TextInputLayout barcode;
+    private Spinner spCategory;
+    private String[] mCategory;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,12 +77,17 @@ public class AddEditActivity extends AppCompatActivity {
             mDialog = new AppCompatDialog(this);
             mDialog.setContentView(R.layout.item_alert_dialog);
             tiName = (TextInputLayout) mDialog.findViewById(R.id.tiName);
+            tiPrice = (TextInputLayout) mDialog.findViewById(R.id.tiPrice);
+            spCategory = (Spinner) mDialog.findViewById(R.id.spCategory);
+            mCategory = new String[]{"Default","Baby", "Baking", "Beverages","Bread/Bakery","Canned Goods","Cereal/Breakfast","Condiments",
+                    "Dairy","Deli","Frozen Foods","Fruits/Vegetables","Meats","Miscellaneous","Non-Food Items","Pasta/Rice","Snacks","Spices"};
+            SpinnerAdapter adapter = new ArrayAdapter<>(this,android.R.layout.simple_dropdown_item_1line, mCategory);
+            spCategory.setAdapter(adapter);
             checkItemName();
             if (tiName.getEditText()!=null) {
                 tiName.getEditText().addTextChangedListener(new TextWatcher() {
                     @Override
                     public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-//                        checkItemName();
                     }
 
                     @Override

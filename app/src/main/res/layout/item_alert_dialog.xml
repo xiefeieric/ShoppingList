@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:orientation="vertical"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:paddingBottom="10dp"
               android:paddingLeft="10dp"
-              android:paddingRight="10dp"
-              android:paddingBottom="10dp">
+              android:paddingRight="10dp">
 
     <android.support.design.widget.TextInputLayout
         android:id="@+id/tiName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
+
         <EditText
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -22,45 +23,67 @@
         android:id="@+id/tiQuantity"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
-    <EditText
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Quantity"
-        android:singleLine="true"
-        android:inputType="number"/>
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Quantity"
+            android:inputType="number"
+            android:singleLine="true"/>
     </android.support.design.widget.TextInputLayout>
 
     <android.support.design.widget.TextInputLayout
         android:id="@+id/tiPrice"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
-    <EditText
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Price"
+            android:inputType="numberDecimal"
+            android:singleLine="true"/>
+    </android.support.design.widget.TextInputLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Price"
-        android:singleLine="true"
-        android:inputType="numberDecimal"/>
-    </android.support.design.widget.TextInputLayout>
+        android:orientation="vertical"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="10dp">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Category: "/>
+        <Spinner
+            android:id="@+id/spCategory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+        </Spinner>
+    </LinearLayout>
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
         android:layout_marginTop="10dp">
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
-            android:text="Cancel"
             android:layout_marginLeft="10dp"
-            android:onClick="dialogCancel"/>
+            android:onClick="dialogCancel"
+            android:text="Cancel"/>
+
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
-            android:text="OK"
             android:layout_marginRight="10dp"
-            android:onClick="dialogOk"/>
+            android:onClick="dialogOk"
+            android:text="OK"/>
 
     </RelativeLayout>
 
