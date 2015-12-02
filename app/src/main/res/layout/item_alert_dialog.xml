@@ -2,13 +2,66 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical"
               android:layout_width="match_parent"
-              android:layout_height="match_parent">
+              android:layout_height="match_parent"
+              android:paddingLeft="10dp"
+              android:paddingRight="10dp"
+              android:paddingBottom="10dp">
 
+    <android.support.design.widget.TextInputLayout
+        android:id="@+id/tiName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Name"
+            android:singleLine="true"/>
+    </android.support.design.widget.TextInputLayout>
+
+    <android.support.design.widget.TextInputLayout
+        android:id="@+id/tiQuantity"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
     <EditText
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Item Name"
-        android:elevation="5dp"
-        android:singleLine="true"/>
+        android:hint="Quantity"
+        android:singleLine="true"
+        android:inputType="number"/>
+    </android.support.design.widget.TextInputLayout>
+
+    <android.support.design.widget.TextInputLayout
+        android:id="@+id/tiPrice"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Price"
+        android:singleLine="true"
+        android:inputType="numberDecimal"/>
+    </android.support.design.widget.TextInputLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:text="Cancel"
+            android:layout_marginLeft="10dp"
+            android:onClick="dialogCancel"/>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:text="OK"
+            android:layout_marginRight="10dp"
+            android:onClick="dialogOk"/>
+
+    </RelativeLayout>
 
 </LinearLayout>
