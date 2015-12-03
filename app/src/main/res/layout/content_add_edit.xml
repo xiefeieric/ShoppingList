@@ -21,6 +21,9 @@
         android:id="@+id/tvTotalPrice"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Total Price: "/>
+        android:text="Total Price: "
+        android:textColor="@android:color/black"
+        android:background="@color/tfblue"
+        android:padding="5dp"/>
 
 </LinearLayout>
