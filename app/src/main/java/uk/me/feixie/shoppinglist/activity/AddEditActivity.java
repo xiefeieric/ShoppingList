@@ -1,13 +1,16 @@
 package uk.me.feixie.shoppinglist.activity;
 
 import android.app.Dialog;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Paint;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Contacts;
+import android.speech.RecognizerIntent;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TextInputLayout;
@@ -19,6 +22,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
+import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.Menu;
@@ -42,6 +46,7 @@ import java.util.List;
 import uk.me.feixie.shoppinglist.R;
 import uk.me.feixie.shoppinglist.model.Item;
 import uk.me.feixie.shoppinglist.utils.Constants;
+import uk.me.feixie.shoppinglist.utils.DividerItemDecoration;
 import uk.me.feixie.shoppinglist.utils.UIUtils;
 
 public class AddEditActivity extends AppCompatActivity {
@@ -55,6 +60,7 @@ public class AddEditActivity extends AppCompatActivity {
     private RecyclerView rvAddEdit;
     private List<Item> mItemList;
     private MyRVAdapter mAdapter;
+    private static final int SPEECH_REQUEST_CODE = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +91,8 @@ public class AddEditActivity extends AppCompatActivity {
     private void initView() {
         rvAddEdit = (RecyclerView) findViewById(R.id.rvAddEdit);
         rvAddEdit.setLayoutManager(new LinearLayoutManager(this));
+        rvAddEdit.setHasFixedSize(true);
+        rvAddEdit.addItemDecoration(new DividerItemDecoration(this,R.drawable.divider));
         mAdapter = new MyRVAdapter();
         rvAddEdit.setAdapter(mAdapter);
     }
@@ -109,7 +117,7 @@ public class AddEditActivity extends AppCompatActivity {
 
             tiName = (TextInputLayout) mDialog.findViewById(R.id.tiName);
 
-            tiPrice = (TextInputLayout) mDialog.findViewById(R.id.tiPrice);
+//            tiPrice = (TextInputLayout) mDialog.findViewById(R.id.tiPrice);
 
             checkItemName();
             if (tiName.getEditText()!=null) {
@@ -149,6 +157,15 @@ public class AddEditActivity extends AppCompatActivity {
             return true;
         }
 
+        if (id == R.id.action_voice) {
+            try {
+                displaySpeechRecognizer();
+            } catch (ActivityNotFoundException e) {
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://market.android.com/details?id=com.google.android.googlequicksearchbox"));
+                startActivity(browserIntent);
+            }
+        }
+
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
@@ -180,16 +197,42 @@ public class AddEditActivity extends AppCompatActivity {
         mItem.setName(name);
         String category = spCategory.getSelectedItem().toString();
         mItem.setCategory(category);
-        String price = tiPrice.getEditText().getText().toString();
-        if (!TextUtils.isEmpty(price)) {
-            mItem.setPrice(price);
-        }
+//        String price = tiPrice.getEditText().getText().toString();
+//        if (!TextUtils.isEmpty(price)) {
+//            mItem.setPrice(price);
+//        }
         Intent intent = new Intent("uk.me.feixie.addIntent");
         intent.putExtra("item",mItem);
         sendBroadcast(intent);
         mDialog.dismiss();
     }
 
+    // Create an intent that can start the Speech Recognizer activity
+    private void displaySpeechRecognizer() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        // Start the activity, the intent will be populated with the speech text
+        startActivityForResult(intent, SPEECH_REQUEST_CODE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == SPEECH_REQUEST_CODE && resultCode == RESULT_OK) {
+            List<String> results = data.getStringArrayListExtra(
+                    RecognizerIntent.EXTRA_RESULTS);
+            String spokenText = results.get(0);
+            // Do something with spokenText
+            if (!TextUtils.isEmpty(spokenText)) {
+                Item item = new Item();
+                item.setName(spokenText);
+                mItemList.add(item);
+                mAdapter.notifyItemInserted(0);
+                rvAddEdit.scrollToPosition(0);
+            }
+        }
+    }
 
     private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
         @Override
@@ -236,6 +279,7 @@ public class AddEditActivity extends AppCompatActivity {
 
         public TextView tvName,tvPrice;
         public RelativeLayout rlItemRv;
+        public boolean mMStrike = false;
 
         public MyViewHolder(View itemView) {
             super(itemView);
@@ -246,8 +290,19 @@ public class AddEditActivity extends AppCompatActivity {
             tvName.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    UIUtils.showToast(v.getContext(), "Clicked: "+getAdapterPosition());
-                    tvName.setLines(1);
+//                    UIUtils.showToast(v.getContext(), "Clicked: "+getAdapterPosition());
+                    if (mMStrike) {
+                        mMStrike = false;
+                        tvName.getPaint().setStrikeThruText(mMStrike);
+                        tvName.setTextColor(v.getResources().getColor(android.R.color.black));
+                        tvName.invalidate();
+                    } else {
+                        mMStrike = true;
+                        tvName.getPaint().setStrikeThruText(mMStrike);
+                        tvName.setTextColor(v.getResources().getColor(android.R.color.darker_gray));
+                        tvName.invalidate();
+                    }
+
                 }
             });
         }
