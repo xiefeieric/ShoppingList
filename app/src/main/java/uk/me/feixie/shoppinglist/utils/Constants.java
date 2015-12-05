@@ -19,7 +19,7 @@ public class Constants {
             "multi-purpose seasoning", "taco mixes"
     };
 
-    public static final String[] Category = new String[] {
+    public static final String[] CATEGORY = new String[] {
             "Default","Baby", "Baking", "Beverages","Bread/Bakery","Canned Goods","Cereal/Breakfast","Condiments",
             "Dairy","Deli","Frozen Foods","Fruits/Vegetables","Meats","Miscellaneous","Non-Food Items","Pasta/Rice","Snacks","Spices"
     };

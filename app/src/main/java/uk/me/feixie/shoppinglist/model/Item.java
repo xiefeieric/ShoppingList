@@ -12,16 +12,18 @@ public class Item implements Serializable {
     private String category;
     private String barcode;
     private String price;
+    private String quantity;
 
     public Item() {
     }
 
-    public Item(int id, String name, String category, String barcode, String price) {
+    public Item(int id, String name, String category, String barcode, String price, String quantity) {
         this.id = id;
         this.name = name;
         this.category = category;
         this.barcode = barcode;
         this.price = price;
+        this.quantity = quantity;
     }
 
     public int getId() {
@@ -64,6 +66,14 @@ public class Item implements Serializable {
         this.price = price;
     }
 
+    public String getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(String quantity) {
+        this.quantity = quantity;
+    }
+
     @Override
     public String toString() {
         return "Item{" +
@@ -72,6 +82,7 @@ public class Item implements Serializable {
                 ", category='" + category + '\'' +
                 ", barcode='" + barcode + '\'' +
                 ", price='" + price + '\'' +
+                ", quantity=" + quantity +
                 '}';
     }
 }

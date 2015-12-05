@@ -4,15 +4,12 @@ import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.Contacts;
 import android.speech.RecognizerIntent;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
@@ -22,19 +19,15 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
-import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.animation.AnimationUtils;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
-import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
@@ -55,12 +48,19 @@ public class AddEditActivity extends AppCompatActivity {
     private int id;
     private TextInputLayout tiName;
     private TextInputLayout tiPrice;
+    private TextInputLayout tiQuantity;
     private TextInputLayout barcode;
     private Spinner spCategory;
     private RecyclerView rvAddEdit;
-    private List<Item> mItemList;
+    private static List<Item> mItemList;
     private MyRVAdapter mAdapter;
     private static final int SPEECH_REQUEST_CODE = 0;
+    private int categoryId;
+    private static Dialog editDialog;
+    private static TextInputLayout tiEditName;
+    private static TextInputLayout tiEditQuantity;
+    private static TextInputLayout tiEditPrice;
+    private static Spinner spEditCategory;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,7 +116,7 @@ public class AddEditActivity extends AppCompatActivity {
             mDialog.setContentView(R.layout.item_alert_dialog);
 
             tiName = (TextInputLayout) mDialog.findViewById(R.id.tiName);
-
+            tiQuantity = (TextInputLayout) mDialog.findViewById(R.id.tiQuantity);
 //            tiPrice = (TextInputLayout) mDialog.findViewById(R.id.tiPrice);
 
             checkItemName();
@@ -144,7 +144,7 @@ public class AddEditActivity extends AppCompatActivity {
             }
 
             spCategory = (Spinner) mDialog.findViewById(R.id.spCategory);
-            SpinnerAdapter adapter = new ArrayAdapter<>(this,android.R.layout.simple_dropdown_item_1line, Constants.Category);
+            SpinnerAdapter adapter = new ArrayAdapter<>(this,android.R.layout.simple_dropdown_item_1line, Constants.CATEGORY);
             spCategory.setAdapter(adapter);
 
 
@@ -195,12 +195,17 @@ public class AddEditActivity extends AppCompatActivity {
         Item mItem = new Item();
         String name = tiName.getEditText().getText().toString();
         mItem.setName(name);
-        String category = spCategory.getSelectedItem().toString();
-        mItem.setCategory(category);
+        categoryId = spCategory.getSelectedItemPosition();
+        mItem.setCategory(String.valueOf(categoryId));
+//        mItem.setCategory(category);
 //        String price = tiPrice.getEditText().getText().toString();
 //        if (!TextUtils.isEmpty(price)) {
 //            mItem.setPrice(price);
 //        }
+        String quantity = tiQuantity.getEditText().getText().toString();
+        if (!TextUtils.isEmpty(quantity)) {
+            mItem.setQuantity(quantity);
+        }
         Intent intent = new Intent("uk.me.feixie.addIntent");
         intent.putExtra("item",mItem);
         sendBroadcast(intent);
@@ -227,6 +232,7 @@ public class AddEditActivity extends AppCompatActivity {
             if (!TextUtils.isEmpty(spokenText)) {
                 Item item = new Item();
                 item.setName(spokenText);
+                item.setCategory("0");
                 mItemList.add(item);
                 mAdapter.notifyItemInserted(0);
                 rvAddEdit.scrollToPosition(0);
@@ -262,10 +268,18 @@ public class AddEditActivity extends AppCompatActivity {
         public void onBindViewHolder(MyViewHolder holder, int position) {
             Item item = mItemList.get(mItemList.size()-1-position);
             String name = item.getName();
-            holder.tvName.setText(name);
+            String quantity = item.getQuantity();
+            if (TextUtils.isEmpty(quantity)) {
+                holder.tvName.setText(name);
+            } else {
+                holder.tvName.setText(name+" ("+quantity+")");
+            }
             String price = item.getPrice();
             if (!TextUtils.isEmpty(price)) {
                 holder.tvPrice.setText(price);
+                holder.tvPrice.setVisibility(View.VISIBLE);
+            } else {
+                holder.tvPrice.setVisibility(View.GONE);
             }
         }
 
@@ -275,17 +289,16 @@ public class AddEditActivity extends AppCompatActivity {
         }
     }
 
-    public static class MyViewHolder extends RecyclerView.ViewHolder {
+    public static class MyViewHolder extends RecyclerView.ViewHolder implements View.OnLongClickListener {
 
         public TextView tvName,tvPrice;
-        public RelativeLayout rlItemRv;
         public boolean mMStrike = false;
+
 
         public MyViewHolder(View itemView) {
             super(itemView);
             tvName = (TextView) itemView.findViewById(R.id.tvName);
             tvPrice = (TextView) itemView.findViewById(R.id.tvPrice);
-            rlItemRv = (RelativeLayout) itemView.findViewById(R.id.rl_item_rv);
 
             tvName.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -305,7 +318,104 @@ public class AddEditActivity extends AppCompatActivity {
 
                 }
             });
+
+            tvName.setOnLongClickListener(this);
         }
+
+        @Override
+        public boolean onLongClick(View v) {
+            editDialog = new AppCompatDialog(v.getContext());
+            editDialog.setContentView(R.layout.item_edit_dialog);
+            tiEditName = (TextInputLayout) editDialog.findViewById(R.id.tiEditName);
+            position = getAdapterPosition();
+            Item item = mItemList.get(mItemList.size()-1-getAdapterPosition());
+            tiEditName.getEditText().setText(item.getName());
+            tiEditName.getEditText().addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                    if (TextUtils.isEmpty(tiEditName.getEditText().getText().toString())) {
+                        tiEditName.setError("Item name can not be empty");
+                        tiEditName.setErrorEnabled(true);
+                    } else {
+                        tiEditName.setErrorEnabled(false);
+                    }
+                }
+            });
+
+            tiEditQuantity = (TextInputLayout) editDialog.findViewById(R.id.tiEditQuantity);
+            tiEditQuantity.getEditText().setText(item.getQuantity());
+
+            tiEditPrice = (TextInputLayout) editDialog.findViewById(R.id.tiEditPrice);
+            tiEditPrice.getEditText().setText(item.getPrice());
+
+            spEditCategory = (Spinner) editDialog.findViewById(R.id.spEditCategory);
+            SpinnerAdapter adapter = new ArrayAdapter<>(v.getContext(),android.R.layout.simple_dropdown_item_1line, Constants.CATEGORY);
+            spEditCategory.setAdapter(adapter);
+            spEditCategory.setSelection(Integer.parseInt(item.getCategory()));
+
+            ((ViewGroup) editDialog.getWindow().getDecorView())
+                    .getChildAt(0).startAnimation(AnimationUtils.loadAnimation(
+                     tiEditName.getContext(), android.R.anim.slide_in_left));
+            editDialog.show();
+            return true;
+        }
+    }
+
+    private static int position;
+
+    public void dialogEditCancel(View view) {
+        editDialog.dismiss();
+    }
+
+    public void dialogEditSave(View view) {
+
+        String editName = tiEditName.getEditText().getText().toString();
+        mItemList.get(mItemList.size()-1-position).setName(editName);
+
+        String editQuantity = tiEditQuantity.getEditText().getText().toString();
+        if (!TextUtils.isEmpty(editQuantity)) {
+            mItemList.get(mItemList.size()-1-position).setQuantity(editQuantity);
+        }
+
+        String editPrice = tiEditPrice.getEditText().getText().toString();
+        if (!TextUtils.isEmpty(editPrice)) {
+            mItemList.get(mItemList.size()-1-position).setPrice(editPrice);
+        }
+
+        categoryId = spEditCategory.getSelectedItemPosition();
+        mItemList.get(mItemList.size()-1-position).setCategory(String.valueOf(spEditCategory.getSelectedItemPosition()));
+        spEditCategory.setSelection(Integer.parseInt(mItemList.get(mItemList.size()-1-position).getCategory()));
+
+        mAdapter.notifyItemChanged(position);
+        editDialog.dismiss();
+    }
+
+    public void dialogEditDelete(View view) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Are you sure you want to delete the item?");
+        builder.setNegativeButton("Cancel",null);
+        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                UIUtils.showToast(AddEditActivity.this, "Delete: "+position);
+                System.out.println(mItemList.get(mItemList.size()-1-position).toString()+"----"+position);
+                mItemList.remove(mItemList.size()-1-position);
+                mAdapter.notifyItemRemoved(position);
+//                mAdapter.notifyDataSetChanged();
+                editDialog.dismiss();
+            }
+        });
+        builder.show();
     }
 
 }
