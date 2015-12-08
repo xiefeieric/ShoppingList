@@ -12,11 +12,11 @@
         android:title="Voice"
         android:icon="@drawable/ic_mic_white_24dp"
         app:showAsAction="always"/>
-    <item
-        android:id="@+id/action_barcode"
-        android:title="Barcode"
-        android:icon="@drawable/ic_aspect_ratio_white_24dp"
-        app:showAsAction="always"/>
+    <!--<item-->
+        <!--android:id="@+id/action_barcode"-->
+        <!--android:title="Barcode"-->
+        <!--android:icon="@drawable/ic_aspect_ratio_white_24dp"-->
+        <!--app:showAsAction="always"/>-->
     <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"
