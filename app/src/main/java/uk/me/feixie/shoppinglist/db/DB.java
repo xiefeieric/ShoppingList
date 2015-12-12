@@ -15,8 +15,29 @@ public class DB extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        String sql = "CREATE TABLE item (_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, category TEXT, barcode TEXT, price TEXT)";
+//        private int id;
+//        private int slId;
+//        private String name;
+//        private String category;
+//        private String barcode;
+//        private String price;
+//        private String quantity;
+//        private boolean buyStatus;
+        String sql = "CREATE TABLE list (_id INTEGER PRIMARY KEY AUTOINCREMENT, listDate TEXT, title TEXT, money TEXT, itemBought TEXT, latitude TEXT, longitude TEXT, show INTEGER)";
         db.execSQL(sql);
+
+        sql = "CREATE TABLE item (_id INTEGER PRIMARY KEY AUTOINCREMENT, slid INTEGER NOT NULL, name TEXT NOT NULL, " +
+                "category TEXT, barcode TEXT, price TEXT, quantity TEXT, buyStatus INTEGER, FOREIGN KEY (slid) REFERENCES list (_id))";
+        db.execSQL(sql);
+//        private int id;
+//        private String listDate;
+//        private String title;
+//        private String money;
+//        private String itemBought;
+//        private String latitude;
+//        private String longitude;
+
+
     }
 
     @Override

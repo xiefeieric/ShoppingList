@@ -3,22 +3,50 @@ package uk.me.feixie.shoppinglist.activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.support.design.widget.TextInputLayout;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.AppCompatDialog;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.view.View;
+import android.text.Editable;
+import android.text.TextUtils;
+import android.text.TextWatcher;
+import android.text.format.DateFormat;
+import android.text.format.DateUtils;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 
 import uk.me.feixie.shoppinglist.R;
+import uk.me.feixie.shoppinglist.db.DBHelper;
+import uk.me.feixie.shoppinglist.model.ShopList;
+import uk.me.feixie.shoppinglist.utils.DividerItemDecoration;
+import uk.me.feixie.shoppinglist.utils.UIUtils;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final int LIST_SHOW = 0;
+    private static final int LIST_NOT_SHOW = 1;
 
     private DrawerLayout dlMain;
     private ActionBarDrawerToggle mToggle;
     private Toolbar mToolbar;
+    private RecyclerView rvMain;
+    private TextInputLayout mTiShopListTitle;
+    private MyRecycleViewAdapter mAdapter;
+    private DBHelper mDbHelper;
+    private List<ShopList> mShopLists;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,20 +57,54 @@ public class MainActivity extends AppCompatActivity {
         initFABtn();
     }
 
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        new Thread(){
+            @Override
+            public void run() {
+                mShopLists = mDbHelper.queryList();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mAdapter.notifyDataSetChanged();
+                    }
+                });
+
+            }
+        }.start();
+
+    }
+
     private void initToolbar() {
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
     }
 
     private void initViews() {
+        mDbHelper = new DBHelper(this);
         //init drawer layout
         dlMain = (DrawerLayout) findViewById(R.id.dlMain);
         //init actionbar toggle button
-        mToggle = new ActionBarDrawerToggle(this,dlMain,mToolbar,R.string.DrawerOpen,R.string.DrawerClose);
+        mToggle = new ActionBarDrawerToggle(this, dlMain, mToolbar, R.string.DrawerOpen, R.string.DrawerClose);
         //set drawer layout listener for toggle button
         dlMain.setDrawerListener(mToggle);
         //link toggle btton with drawer layout
         mToggle.syncState();
+
+        new Thread(){
+            @Override
+            public void run() {
+                mShopLists = mDbHelper.queryList();
+            }
+        }.start();
+
+        rvMain = (RecyclerView) findViewById(R.id.rvMain);
+        rvMain.setHasFixedSize(true);
+        rvMain.setLayoutManager(new LinearLayoutManager(this));
+        rvMain.addItemDecoration(new DividerItemDecoration(this));
+        mAdapter = new MyRecycleViewAdapter();
+        rvMain.setAdapter(mAdapter);
     }
 
     private void initFABtn() {
@@ -53,9 +115,83 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
 //                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
 //                        .setAction("Action", null).show();
-                startActivity(new Intent(MainActivity.this, AddEditActivity.class));
+                final AppCompatDialog dialog = new AppCompatDialog(MainActivity.this);
+                dialog.setContentView(R.layout.item_dialog_main);
+
+                mTiShopListTitle = (TextInputLayout) dialog.findViewById(R.id.tiShopListTitle);
+
+                checkName();
+                if (mTiShopListTitle.getEditText() != null) {
+                    mTiShopListTitle.getEditText().addTextChangedListener(new TextWatcher() {
+                        @Override
+                        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+                        }
+
+                        @Override
+                        public void onTextChanged(CharSequence s, int start, int before, int count) {
+                            checkName();
+                        }
+
+                        @Override
+                        public void afterTextChanged(Editable s) {
+
+                        }
+                    });
+                }
+
+                Button btnMainCancel = (Button) dialog.findViewById(R.id.btnMainCancel);
+                btnMainCancel.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        dialog.dismiss();
+                    }
+                });
+                Button btnMainOk = (Button) dialog.findViewById(R.id.btnMainOk);
+                btnMainOk.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        String title = mTiShopListTitle.getEditText().getText().toString();
+                        if (!TextUtils.isEmpty(title)) {
+                            final ShopList shopList = new ShopList();
+                            shopList.setTitle(title);
+                            //0=show,1=hide
+                            shopList.setShow(LIST_SHOW);
+                            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+                            String listDate = formatter.format(new Date());
+                            shopList.setListDate(listDate);
+
+                            new Thread() {
+                                @Override
+                                public void run() {
+                                    DBHelper dbHelper = new DBHelper(MainActivity.this);
+                                    dbHelper.addList(shopList);
+                                }
+                            }.start();
+
+                            Intent intent = new Intent(MainActivity.this, AddEditActivity.class);
+                            intent.putExtra("shop_list", shopList);
+                            startActivity(intent);
+                            dialog.dismiss();
+                        } else {
+                            UIUtils.showToast(MainActivity.this, "Title can not be empty!");
+                        }
+                    }
+                });
+
+                dialog.show();
+//                startActivity(new Intent(MainActivity.this, AddEditActivity.class));
             }
         });
+    }
+
+    private void checkName() {
+        if (TextUtils.isEmpty(mTiShopListTitle.getEditText().getText().toString())) {
+            mTiShopListTitle.setErrorEnabled(true);
+            mTiShopListTitle.setError("Title can not be empty!");
+        } else {
+            mTiShopListTitle.setErrorEnabled(false);
+        }
     }
 
     @Override
@@ -82,5 +218,63 @@ public class MainActivity extends AppCompatActivity {
 //        }
 
         return super.onOptionsItemSelected(item);
+    }
+
+
+
+
+    class MyRecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
+
+
+        @Override
+        public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view = View.inflate(parent.getContext(),R.layout.item_main_rv,null);
+            MyViewHolder myViewHolder = new MyViewHolder(view);
+            return myViewHolder;
+        }
+
+        @Override
+        public void onBindViewHolder(MyViewHolder holder, int position) {
+            ShopList shopList = mShopLists.get(position);
+            holder.tvTitle.setText(shopList.getTitle());
+            holder.tvDate.setText(shopList.getListDate());
+            holder.tvMoney.setText(shopList.getMoney());
+            holder.tvItemBought.setText(shopList.getItemBought());
+        }
+
+        @Override
+        public int getItemCount() {
+            return mShopLists.size();
+        }
+    }
+
+    public class MyViewHolder extends RecyclerView.ViewHolder {
+
+        public TextView tvDate;
+        public TextView tvTitle;
+        public TextView tvMoney;
+        public TextView tvItemBought;
+        public LinearLayout llRVMain;
+
+        public MyViewHolder(View itemView) {
+            super(itemView);
+            tvDate = (TextView) itemView.findViewById(R.id.tvDate);
+            tvTitle = (TextView) itemView.findViewById(R.id.tvTitle);
+            tvMoney = (TextView) itemView.findViewById(R.id.tvMoney);
+            tvItemBought = (TextView) itemView.findViewById(R.id.tvItemBought);
+            llRVMain = (LinearLayout) itemView.findViewById(R.id.llRVMain);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            llRVMain.setLayoutParams(params);
+            llRVMain.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    UIUtils.showToast(MainActivity.this, "CLICKED: "+getAdapterPosition());
+                    ShopList shopList = mShopLists.get(getAdapterPosition());
+                    Intent intent  = new Intent(MainActivity.this,AddEditActivity.class);
+                    intent.putExtra("shop_list",shopList);
+                    startActivity(intent);
+                }
+            });
+        }
     }
 }

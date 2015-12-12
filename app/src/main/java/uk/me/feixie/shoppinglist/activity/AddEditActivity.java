@@ -1,6 +1,5 @@
 package uk.me.feixie.shoppinglist.activity;
 
-import android.app.Activity;
 import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
@@ -37,11 +36,14 @@ import android.widget.TextView;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import uk.me.feixie.shoppinglist.R;
+import uk.me.feixie.shoppinglist.db.DBHelper;
 import uk.me.feixie.shoppinglist.model.Item;
+import uk.me.feixie.shoppinglist.model.ShopList;
 import uk.me.feixie.shoppinglist.utils.Constants;
 import uk.me.feixie.shoppinglist.utils.DividerItemDecoration;
 import uk.me.feixie.shoppinglist.utils.NumberHelper;
@@ -49,26 +51,31 @@ import uk.me.feixie.shoppinglist.utils.UIUtils;
 
 public class AddEditActivity extends AppCompatActivity {
 
+    private static final int SPEECH_REQUEST_CODE = 0;
+    private static final int ITEM_BOUGHT = 1;
+    private static final int ITEM_NOT_BOUGHT = 2;
+
     private Dialog mDialog;
     private int id;
     private TextInputLayout tiName;
     private TextView tvTotalPrice;
     private TextInputLayout tiQuantity;
-    private TextInputLayout barcode;
     private Spinner spCategory;
     private RecyclerView rvAddEdit;
-    private  List<Item> mItemList;
+    private List<Item> mItemList;
     private MyRVAdapter mAdapter;
-    private static final int SPEECH_REQUEST_CODE = 0;
     private int categoryId;
     private double totalPrice;
-    private  Dialog editDialog;
-    private  TextInputLayout tiEditName;
-    private  TextInputLayout tiEditQuantity;
-    private  TextInputLayout tiEditPrice;
-    private  TextInputLayout tiEditBarcode;
-    private  Spinner spEditCategory;
-    private  ImageView ivBarcode;
+    private Dialog editDialog;
+    private TextInputLayout tiEditName;
+    private TextInputLayout tiEditQuantity;
+    private TextInputLayout tiEditPrice;
+    private TextInputLayout tiEditBarcode;
+    private Spinner spEditCategory;
+    private ImageView ivBarcode;
+    private boolean mMStrike;
+    private ShopList mShopList;
+    private DBHelper mDbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,7 +91,7 @@ public class AddEditActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         totalPrice = +totalPrice;
-        tvTotalPrice.setText("Total Price: "+ totalPrice);
+        tvTotalPrice.setText("Total Price: " + totalPrice);
     }
 
     @Override
@@ -104,14 +111,53 @@ public class AddEditActivity extends AppCompatActivity {
     }
 
     private void initView() {
+        mShopList = (ShopList) getIntent().getSerializableExtra("shop_list");
+        mDbHelper = new DBHelper(AddEditActivity.this);
+
         rvAddEdit = (RecyclerView) findViewById(R.id.rvAddEdit);
         rvAddEdit.setLayoutManager(new LinearLayoutManager(this));
         rvAddEdit.setHasFixedSize(true);
         rvAddEdit.addItemDecoration(new DividerItemDecoration(this, R.drawable.divider));
         mAdapter = new MyRVAdapter();
         rvAddEdit.setAdapter(mAdapter);
-
         tvTotalPrice = (TextView) findViewById(R.id.tvTotalPrice);
+
+        if (mShopList.getId()<1) {
+            new Thread(){
+                @Override
+                public void run() {
+                    int id = mDbHelper.queryListId(mShopList);
+                    mShopList.setId(id);
+                    mItemList = mDbHelper.queryAllItems(mShopList);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mAdapter.notifyDataSetChanged();
+                        }
+                    });
+                }
+            }.start();
+        } else {
+            showList();
+        }
+
+        UIUtils.showToast(this,mShopList.getId()+","+mShopList.getTitle());
+
+    }
+
+    private void showList() {
+        new Thread(){
+            @Override
+            public void run() {
+                mItemList = mDbHelper.queryAllItems(mShopList);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mAdapter.notifyDataSetChanged();
+                    }
+                });
+            }
+        }.start();
 
     }
 
@@ -213,22 +259,35 @@ public class AddEditActivity extends AppCompatActivity {
     }
 
     public void dialogOk(View view) {
-        Item mItem = new Item();
+        final Item mItem = new Item();
         String name = tiName.getEditText().getText().toString();
         if (!TextUtils.isEmpty(name)) {
             mItem.setName(name);
+            mItem.setSlId(mShopList.getId());
             categoryId = spCategory.getSelectedItemPosition();
             mItem.setCategory(String.valueOf(categoryId));
             String quantity = tiQuantity.getEditText().getText().toString();
             if (!TextUtils.isEmpty(quantity)) {
                 mItem.setQuantity(quantity);
             }
+            mItem.setBuyStatus(ITEM_NOT_BOUGHT);
             Intent intent = new Intent("uk.me.feixie.addIntent");
             intent.putExtra("item", mItem);
             sendBroadcast(intent);
+
+            new Thread(){
+                @Override
+                public void run() {
+                    mDbHelper.addItem(mItem);
+                }
+            }.start();
+
+            System.out.println(mItem.toString());
+
             mDialog.dismiss();
+
         } else {
-            UIUtils.showToast(this,"Item name can not be empty!");
+            UIUtils.showToast(this, "Item name can not be empty!");
         }
 
     }
@@ -266,6 +325,7 @@ public class AddEditActivity extends AppCompatActivity {
                 Item item = new Item();
                 item.setName(spokenText);
                 item.setCategory("0");
+                item.setBuyStatus(ITEM_NOT_BOUGHT);
                 mItemList.add(item);
                 mAdapter.notifyItemInserted(0);
                 rvAddEdit.scrollToPosition(0);
@@ -327,10 +387,21 @@ public class AddEditActivity extends AppCompatActivity {
             }
 
             if (!TextUtils.isEmpty(quantity) && !TextUtils.isEmpty(price)) {
-                totalPrice = totalPrice+(Double.parseDouble(price)*Double.parseDouble(quantity));
+                totalPrice = totalPrice + (Double.parseDouble(price) * Double.parseDouble(quantity));
             }
+
+            if (item.getBuyStatus() == ITEM_BOUGHT) {
+                holder.tvName.getPaint().setStrikeThruText(true);
+                holder.tvName.setTextColor(getResources().getColor(android.R.color.darker_gray));
+                holder.tvName.invalidate();
+            } else if (item.getBuyStatus() == ITEM_NOT_BOUGHT) {
+                holder.tvName.getPaint().setStrikeThruText(false);
+                holder.tvName.setTextColor(getResources().getColor(android.R.color.black));
+                holder.tvName.invalidate();
+            }
+
 //            System.out.println("TempPrice: "+ totalPrice);
-            tvTotalPrice.setText("Total Price: "+ NumberHelper.round(totalPrice,2));
+            tvTotalPrice.setText("Total Price: " + NumberHelper.round(totalPrice, 2));
         }
 
         @Override
@@ -339,11 +410,9 @@ public class AddEditActivity extends AppCompatActivity {
         }
     }
 
-    public class MyViewHolder extends RecyclerView.ViewHolder implements View.OnLongClickListener {
+    class MyViewHolder extends RecyclerView.ViewHolder implements View.OnLongClickListener {
 
         public TextView tvName, tvPrice;
-        public boolean mMStrike = false;
-
 
         public MyViewHolder(View itemView) {
             super(itemView);
@@ -353,17 +422,22 @@ public class AddEditActivity extends AppCompatActivity {
             tvName.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+//                    System.out.println("onClick");
+                    Item item = mItemList.get(mItemList.size() - 1 - getAdapterPosition());
 //                    UIUtils.showToast(v.getContext(), "Clicked: "+getAdapterPosition());
-                    if (mMStrike) {
+
+                    if (item.getBuyStatus() == ITEM_BOUGHT) {
                         mMStrike = false;
                         tvName.getPaint().setStrikeThruText(mMStrike);
                         tvName.setTextColor(v.getResources().getColor(android.R.color.black));
+                        item.setBuyStatus(ITEM_NOT_BOUGHT);
                         tvName.invalidate();
-                    } else {
+                    } else if (item.getBuyStatus() == ITEM_NOT_BOUGHT) {
                         mMStrike = true;
                         tvName.getPaint().setStrikeThruText(mMStrike);
                         tvName.setTextColor(v.getResources().getColor(android.R.color.darker_gray));
                         tvName.invalidate();
+                        item.setBuyStatus(ITEM_BOUGHT);
                     }
 
                 }
@@ -404,13 +478,20 @@ public class AddEditActivity extends AppCompatActivity {
             });
 
             tiEditQuantity = (TextInputLayout) editDialog.findViewById(R.id.tiEditQuantity);
-            tiEditQuantity.getEditText().setText(item.getQuantity());
+            if (tiEditQuantity.getEditText()!=null) {
+                tiEditQuantity.getEditText().setText(item.getQuantity());
+            }
 
             tiEditPrice = (TextInputLayout) editDialog.findViewById(R.id.tiEditPrice);
-            tiEditPrice.getEditText().setText(item.getPrice());
+            if (tiEditPrice.getEditText()!=null) {
+                tiEditPrice.getEditText().setText(item.getPrice());
+            }
 
             tiEditBarcode = (TextInputLayout) editDialog.findViewById(R.id.tiEditBarcode);
-            tiEditBarcode.getEditText().setText(item.getBarcode());
+            if (tiEditBarcode.getEditText()!=null) {
+                tiEditBarcode.getEditText().setText(item.getBarcode());
+            }
+
             ivBarcode = (ImageView) editDialog.findViewById(R.id.ivBarcode);
             ivBarcode.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -455,7 +536,7 @@ public class AddEditActivity extends AppCompatActivity {
             }
 
             String barcode = tiEditBarcode.getEditText().getText().toString();
-            if (!TextUtils.isEmpty(barcode)){
+            if (!TextUtils.isEmpty(barcode)) {
                 mItemList.get(mItemList.size() - 1 - position).setBarcode(barcode);
             }
 
@@ -467,7 +548,7 @@ public class AddEditActivity extends AppCompatActivity {
 
             editDialog.dismiss();
         } else {
-            UIUtils.showToast(this,"Item name can not be empty!");
+            UIUtils.showToast(this, "Item name can not be empty!");
         }
 
     }
@@ -484,8 +565,8 @@ public class AddEditActivity extends AppCompatActivity {
                 Item item = mItemList.get(mItemList.size() - 1 - position);
 //                System.out.println("Delete: "+Double.parseDouble(item.getPrice())*Integer.parseInt(item.getQuantity()));
                 if (!TextUtils.isEmpty(item.getQuantity()) && !TextUtils.isEmpty(item.getPrice())) {
-                    totalPrice = totalPrice-(Double.parseDouble(item.getPrice())*Integer.parseInt(item.getQuantity()));
-                    tvTotalPrice.setText("Total Price: "+ NumberHelper.round(totalPrice,2));
+                    totalPrice = totalPrice - (Double.parseDouble(item.getPrice()) * Integer.parseInt(item.getQuantity()));
+                    tvTotalPrice.setText("Total Price: " + NumberHelper.round(totalPrice, 2));
                 }
 
                 mItemList.remove(mItemList.size() - 1 - position);

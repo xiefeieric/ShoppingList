@@ -8,22 +8,15 @@ import java.io.Serializable;
 public class Item implements Serializable {
 
     private int id;
+    private int slId;
     private String name;
     private String category;
     private String barcode;
     private String price;
     private String quantity;
+    private int buyStatus;
 
     public Item() {
-    }
-
-    public Item(int id, String name, String category, String barcode, String price, String quantity) {
-        this.id = id;
-        this.name = name;
-        this.category = category;
-        this.barcode = barcode;
-        this.price = price;
-        this.quantity = quantity;
     }
 
     public int getId() {
@@ -32,6 +25,14 @@ public class Item implements Serializable {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public int getSlId() {
+        return slId;
+    }
+
+    public void setSlId(int slId) {
+        this.slId = slId;
     }
 
     public String getName() {
@@ -74,15 +75,25 @@ public class Item implements Serializable {
         this.quantity = quantity;
     }
 
+    public int getBuyStatus() {
+        return buyStatus;
+    }
+
+    public void setBuyStatus(int buyStatus) {
+        this.buyStatus = buyStatus;
+    }
+
     @Override
     public String toString() {
         return "Item{" +
                 "id=" + id +
+                ", slId=" + slId +
                 ", name='" + name + '\'' +
                 ", category='" + category + '\'' +
                 ", barcode='" + barcode + '\'' +
                 ", price='" + price + '\'' +
-                ", quantity=" + quantity +
+                ", quantity='" + quantity + '\'' +
+                ", buyStatus=" + buyStatus +
                 '}';
     }
 }
