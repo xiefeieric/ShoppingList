@@ -75,6 +75,7 @@ public class AddEditActivity extends AppCompatActivity {
     private boolean mMStrike;
     private ShopList mShopList;
     private DBHelper mDbHelper;
+    private int bought;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -147,6 +148,11 @@ public class AddEditActivity extends AppCompatActivity {
             @Override
             public void run() {
                 mItemList = mDbHelper.queryAllItems(mShopList);
+                for (Item item:mItemList) {
+                    if (item.getBuyStatus()==ITEM_BOUGHT) {
+                        bought++;
+                    }
+                }
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -165,6 +171,8 @@ public class AddEditActivity extends AppCompatActivity {
 
     private void updateShopList() {
         mShopList.setMoney(String.valueOf(NumberHelper.round(totalPrice,2)));
+        int size = mItemList.size();
+        mShopList.setItemBought("("+bought+"/"+size+")");
 
         new Thread(){
             @Override
@@ -322,13 +330,21 @@ public class AddEditActivity extends AppCompatActivity {
             String spokenText = results.get(0);
             // Do something with spokenText
             if (!TextUtils.isEmpty(spokenText)) {
-                Item item = new Item();
+                final Item item = new Item();
                 item.setName(spokenText);
                 item.setCategory("0");
+                item.setSlId(mShopList.getId());
                 item.setBuyStatus(ITEM_NOT_BOUGHT);
                 mItemList.add(item);
                 mAdapter.notifyItemInserted(0);
                 rvAddEdit.scrollToPosition(0);
+                new Thread(){
+                    @Override
+                    public void run() {
+                        mDbHelper.addItem(item);
+                        mItemList = mDbHelper.queryAllItems(mShopList);
+                    }
+                }.start();
             }
         }
 
@@ -348,11 +364,17 @@ public class AddEditActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
 
             if (intent.getAction().equalsIgnoreCase("uk.me.feixie.addIntent")) {
-                Item item = (Item) intent.getSerializableExtra("item");
+                final Item item = (Item) intent.getSerializableExtra("item");
                 mItemList.add(item);
                 mAdapter.notifyItemInserted(0);
                 rvAddEdit.scrollToPosition(0);
-                mDbHelper.addItem(item);
+
+                new Thread(){
+                    @Override
+                    public void run() {
+                        mDbHelper.addItem(item);
+                    }
+                }.start();
 
                 totalPrice = 0.0;
                 for (Item eachItem:mItemList) {
@@ -420,6 +442,7 @@ public class AddEditActivity extends AppCompatActivity {
         }
     }
 
+
     class MyViewHolder extends RecyclerView.ViewHolder implements View.OnLongClickListener {
 
         public TextView tvName, tvPrice;
@@ -442,12 +465,16 @@ public class AddEditActivity extends AppCompatActivity {
                         tvName.setTextColor(v.getResources().getColor(android.R.color.black));
                         item.setBuyStatus(ITEM_NOT_BOUGHT);
                         tvName.invalidate();
+                        mDbHelper.updateItem(item);
+                        bought--;
                     } else if (item.getBuyStatus() == ITEM_NOT_BOUGHT) {
                         mMStrike = true;
                         tvName.getPaint().setStrikeThruText(mMStrike);
                         tvName.setTextColor(v.getResources().getColor(android.R.color.darker_gray));
                         tvName.invalidate();
                         item.setBuyStatus(ITEM_BOUGHT);
+                        mDbHelper.updateItem(item);
+                        bought++;
                     }
 
                 }
@@ -540,7 +567,7 @@ public class AddEditActivity extends AppCompatActivity {
 
     public void dialogEditSave(View view) {
 
-        Item item = mItemList.get(mItemList.size() - 1 - position);
+        final Item item = mItemList.get(mItemList.size() - 1 - position);
 
         String editName = tiEditName.getEditText().getText().toString();
         if (!TextUtils.isEmpty(editName)) {
@@ -566,7 +593,13 @@ public class AddEditActivity extends AppCompatActivity {
             spEditCategory.setSelection(Integer.parseInt(item.getCategory()));
 
             mAdapter.notifyItemChanged(position);
-            mDbHelper.updateItem(item);
+
+            new Thread(){
+                @Override
+                public void run() {
+                    mDbHelper.updateItem(item);
+                }
+            }.start();
 
             totalPrice = 0.0;
             for (Item eachItem:mItemList) {
@@ -594,15 +627,22 @@ public class AddEditActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int which) {
 //                UIUtils.showToast(AddEditActivity.this, "Delete: " + position);
 //                System.out.println(mItemList.get(mItemList.size() - 1 - position).toString() + "----" + position);
-                Item item = mItemList.get(mItemList.size() - 1 - position);
+                final Item item = mItemList.get(mItemList.size() - 1 - position);
 //                System.out.println("Delete: "+Double.parseDouble(item.getPrice())*Integer.parseInt(item.getQuantity()));
                 if (!TextUtils.isEmpty(item.getQuantity()) && !TextUtils.isEmpty(item.getPrice())) {
                     totalPrice = totalPrice - (Double.parseDouble(item.getPrice()) * Integer.parseInt(item.getQuantity()));
                     tvTotalPrice.setText("Total Price: " + NumberHelper.round(totalPrice, 2));
                 }
 
-                mItemList.remove(mItemList.size() - 1 - position);
+                mItemList.remove(item);
                 mAdapter.notifyItemRemoved(position);
+
+                new Thread(){
+                    @Override
+                    public void run() {
+                        mDbHelper.deleteItem(item);
+                    }
+                }.start();
 
                 editDialog.dismiss();
             }

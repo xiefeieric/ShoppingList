@@ -97,20 +97,26 @@ public class MainActivity extends AppCompatActivity {
         //link toggle btton with drawer layout
         mToggle.syncState();
 
-        new Thread(){
-            @Override
-            public void run() {
-                mShopLists = mDbHelper.queryList();
-                sortList(mShopLists);
-            }
-        }.start();
-
         rvMain = (RecyclerView) findViewById(R.id.rvMain);
         rvMain.setHasFixedSize(true);
         rvMain.setLayoutManager(new LinearLayoutManager(this));
         rvMain.addItemDecoration(new DividerItemDecoration(this));
         mAdapter = new MyRecycleViewAdapter();
         rvMain.setAdapter(mAdapter);
+
+        new Thread(){
+            @Override
+            public void run() {
+                mShopLists = mDbHelper.queryList();
+                sortList(mShopLists);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mAdapter.notifyDataSetChanged();
+                    }
+                });
+            }
+        }.start();
     }
 
     private void initFABtn() {
@@ -172,6 +178,12 @@ public class MainActivity extends AppCompatActivity {
                                 public void run() {
                                     DBHelper dbHelper = new DBHelper(MainActivity.this);
                                     dbHelper.addList(shopList);
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            mAdapter.notifyDataSetChanged();
+                                        }
+                                    });
                                 }
                             }.start();
 
@@ -249,6 +261,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    private int pressed;
+    @Override
+    public void onBackPressed() {
+        if (pressed%2==0) {
+            UIUtils.showToast(this,"One more click to quite the app");
+        } else {
+           super.onBackPressed();
+        }
+        pressed++;
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        pressed=0;
+    }
+
+
 
 
     class MyRecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
@@ -311,11 +341,19 @@ public class MainActivity extends AppCompatActivity {
             llRVMain.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    ShopList shopList = mShopLists.get(getAdapterPosition());
-                    System.out.println(shopList.getShow());
-                    shopList.setShow(1);
+                    final ShopList shopList = mShopLists.get(getAdapterPosition());
+//                    System.out.println(shopList.getShow());
+                    shopList.setShow(LIST_NOT_SHOW);
                     mShopLists.remove(shopList);
                     mAdapter.notifyItemRemoved(getAdapterPosition());
+
+                    new Thread(){
+                        @Override
+                        public void run() {
+                            mDbHelper.updateList(shopList);
+                        }
+                    }.start();
+
                     return true;
                 }
             });
