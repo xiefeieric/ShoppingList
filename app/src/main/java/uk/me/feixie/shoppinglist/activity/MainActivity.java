@@ -25,12 +25,15 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
 import uk.me.feixie.shoppinglist.R;
 import uk.me.feixie.shoppinglist.db.DBHelper;
 import uk.me.feixie.shoppinglist.model.ShopList;
+import uk.me.feixie.shoppinglist.utils.DateUtil;
 import uk.me.feixie.shoppinglist.utils.DividerItemDecoration;
 import uk.me.feixie.shoppinglist.utils.UIUtils;
 
@@ -64,10 +67,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 mShopLists = mDbHelper.queryList();
+                sortList(mShopLists);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         mAdapter.notifyDataSetChanged();
+                        rvMain.scrollToPosition(0);
                     }
                 });
 
@@ -96,6 +101,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 mShopLists = mDbHelper.queryList();
+                sortList(mShopLists);
             }
         }.start();
 
@@ -220,6 +226,28 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    public void sortList(List<ShopList> shopList) {
+        Collections.sort(shopList, new Comparator<ShopList>() {
+            /**
+             *
+             * @param lhs
+             * @param rhs
+             * @return an integer < 0 if lhs is less than rhs, 0 if they are
+             *         equal, and > 0 if lhs is greater than rhs,比较数据大小时,这里比的是时间
+             */
+            @Override
+            public int compare(ShopList lhs, ShopList rhs) {
+                Date date1 = DateUtil.stringToDate(lhs.getListDate());
+                Date date2 = DateUtil.stringToDate(rhs.getListDate());
+                // 对日期字段进行升序，如果欲降序可采用after方法
+                if (date1.getTime() < date2.getTime()) return 1;
+                else if (date1.getTime() > date2.getTime()) return -1;
+                else return 0;
+            }
+
+        });
+    }
+
 
 
 
@@ -244,7 +272,11 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public int getItemCount() {
-            return mShopLists.size();
+            if (mShopLists!=null) {
+                return mShopLists.size();
+            } else {
+                return 0;
+            }
         }
     }
 
@@ -268,11 +300,23 @@ public class MainActivity extends AppCompatActivity {
             llRVMain.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    UIUtils.showToast(MainActivity.this, "CLICKED: "+getAdapterPosition());
+//                    UIUtils.showToast(MainActivity.this, "CLICKED: "+getAdapterPosition());
                     ShopList shopList = mShopLists.get(getAdapterPosition());
                     Intent intent  = new Intent(MainActivity.this,AddEditActivity.class);
                     intent.putExtra("shop_list",shopList);
                     startActivity(intent);
+                }
+            });
+
+            llRVMain.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    ShopList shopList = mShopLists.get(getAdapterPosition());
+                    System.out.println(shopList.getShow());
+                    shopList.setShow(1);
+                    mShopLists.remove(shopList);
+                    mAdapter.notifyItemRemoved(getAdapterPosition());
+                    return true;
                 }
             });
         }

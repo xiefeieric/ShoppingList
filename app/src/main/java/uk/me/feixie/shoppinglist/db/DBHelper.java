@@ -46,9 +46,22 @@ public class DBHelper {
         writableDatabase.close();
     }
 
+    public void updateList(ShopList list) {
+        SQLiteDatabase writableDatabase = mDB.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("listDate",list.getListDate());
+        values.put("title",list.getTitle());
+        values.put("money",list.getMoney());
+        values.put("itemBought",list.getItemBought());
+        values.put("latitude",list.getLatitude());
+        values.put("longitude",list.getLongitude());
+        values.put("show",list.getShow());
+        writableDatabase.update(TABLE_LIST,values,"_id=?",new String[]{String.valueOf(list.getId())});
+    }
+
     public List<ShopList> queryList() {
         SQLiteDatabase readableDatabase = mDB.getReadableDatabase();
-        Cursor cursor = readableDatabase.query(TABLE_LIST, null, null, null, null, null, null);
+        Cursor cursor = readableDatabase.query(TABLE_LIST, null, "show=?", new String[]{"0"}, null, null, null);
         List<ShopList> shopLists = new ArrayList<>();
         if (cursor != null) {
             while (cursor.moveToNext()) {

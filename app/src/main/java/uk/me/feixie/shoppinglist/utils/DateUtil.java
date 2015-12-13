@@ -7,7 +7,7 @@ import java.util.Date;
 /**
  * Created by Fei on 13/11/2015.
  */
-public class DateUtils {
+public class DateUtil {
 
     public static Date stringToDate(String dateString) {
         ParsePosition position = new ParsePosition(0);
