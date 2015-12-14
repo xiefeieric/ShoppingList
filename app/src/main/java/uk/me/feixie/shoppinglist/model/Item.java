@@ -15,6 +15,8 @@ public class Item implements Serializable {
     private String price;
     private String quantity;
     private int buyStatus;
+    private String expireDate;
+
 
     public Item() {
     }
@@ -83,6 +85,14 @@ public class Item implements Serializable {
         this.buyStatus = buyStatus;
     }
 
+    public String getExpireDate() {
+        return expireDate;
+    }
+
+    public void setExpireDate(String expireDate) {
+        this.expireDate = expireDate;
+    }
+
     @Override
     public String toString() {
         return "Item{" +
@@ -94,6 +104,7 @@ public class Item implements Serializable {
                 ", price='" + price + '\'' +
                 ", quantity='" + quantity + '\'' +
                 ", buyStatus=" + buyStatus +
+                ", expireDate='" + expireDate + '\'' +
                 '}';
     }
 }

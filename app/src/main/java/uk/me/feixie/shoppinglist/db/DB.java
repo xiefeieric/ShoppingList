@@ -27,7 +27,7 @@ public class DB extends SQLiteOpenHelper {
         db.execSQL(sql);
 
         sql = "CREATE TABLE item (_id INTEGER PRIMARY KEY AUTOINCREMENT, slid INTEGER NOT NULL, name TEXT NOT NULL, " +
-                "category TEXT, barcode TEXT, price TEXT, quantity TEXT, buyStatus INTEGER, FOREIGN KEY (slid) REFERENCES list (_id))";
+                "category TEXT, barcode TEXT, price TEXT, quantity TEXT, expireDate TEXT, buyStatus INTEGER, FOREIGN KEY (slid) REFERENCES list (_id))";
         db.execSQL(sql);
 //        private int id;
 //        private String listDate;

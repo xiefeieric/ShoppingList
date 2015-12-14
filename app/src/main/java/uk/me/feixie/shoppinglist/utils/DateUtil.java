@@ -15,4 +15,11 @@ public class DateUtil {
         Date dateValue = simpleDateFormat.parse(dateString, position);
         return dateValue;
     }
+
+    public static Date stringToDateSimple(String dateString) {
+        ParsePosition position = new ParsePosition(0);
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        Date dateValue = simpleDateFormat.parse(dateString, position);
+        return dateValue;
+    }
 }

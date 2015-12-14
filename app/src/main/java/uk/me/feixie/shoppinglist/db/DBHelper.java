@@ -116,6 +116,7 @@ public class DBHelper {
         values.put("price", item.getPrice());
         values.put("quantity", item.getQuantity());
         values.put("buyStatus", item.getBuyStatus());
+        values.put("expireDate",item.getExpireDate());
         writableDatabase.insert(TABLE_ITEM, null, values);
         writableDatabase.close();
     }
@@ -135,6 +136,7 @@ public class DBHelper {
         values.put("price", item.getPrice());
         values.put("quantity", item.getQuantity());
         values.put("buyStatus", item.getBuyStatus());
+        values.put("expireDate", item.getExpireDate());
         writableDatabase.update(TABLE_ITEM, values, "_id=?", new String[]{String.valueOf(item.getId())});
         writableDatabase.close();
     }
@@ -160,6 +162,8 @@ public class DBHelper {
                 item.setPrice(price);
                 String quantity = cursor.getString(cursor.getColumnIndex("quantity"));
                 item.setQuantity(quantity);
+                String expireDate = cursor.getString(cursor.getColumnIndex("expireDate"));
+                item.setExpireDate(expireDate);
                 int buyStatus = cursor.getInt(cursor.getColumnIndex("buyStatus"));
                 item.setBuyStatus(buyStatus);
                 items.add(item);

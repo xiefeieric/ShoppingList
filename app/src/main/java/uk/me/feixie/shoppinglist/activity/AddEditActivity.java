@@ -1,6 +1,9 @@
 package uk.me.feixie.shoppinglist.activity;
 
+import android.app.AlarmManager;
+import android.app.DatePickerDialog;
 import android.app.Dialog;
+import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -9,6 +12,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.speech.RecognizerIntent;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.ActionBar;
@@ -28,6 +32,7 @@ import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.DatePicker;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
@@ -38,13 +43,17 @@ import com.google.zxing.integration.android.IntentResult;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
+import uk.me.feixie.shoppinglist.BroadcastReceiver.AlarmReceiver;
 import uk.me.feixie.shoppinglist.R;
 import uk.me.feixie.shoppinglist.db.DBHelper;
 import uk.me.feixie.shoppinglist.model.Item;
 import uk.me.feixie.shoppinglist.model.ShopList;
 import uk.me.feixie.shoppinglist.utils.Constants;
+import uk.me.feixie.shoppinglist.utils.DateUtil;
 import uk.me.feixie.shoppinglist.utils.DividerItemDecoration;
 import uk.me.feixie.shoppinglist.utils.NumberHelper;
 import uk.me.feixie.shoppinglist.utils.UIUtils;
@@ -70,8 +79,10 @@ public class AddEditActivity extends AppCompatActivity {
     private TextInputLayout tiEditQuantity;
     private TextInputLayout tiEditPrice;
     private TextInputLayout tiEditBarcode;
+    private TextInputLayout tiEditExpireDate;
     private Spinner spEditCategory;
     private ImageView ivBarcode;
+    private ImageView ivExpireDate;
     private boolean mMStrike;
     private ShopList mShopList;
     private DBHelper mDbHelper;
@@ -91,7 +102,7 @@ public class AddEditActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 //        totalPrice = +totalPrice;
-        tvTotalPrice.setText("Total Price: " + totalPrice);
+        tvTotalPrice.setText("Total Price: " + NumberHelper.round(totalPrice,2));
     }
 
     @Override
@@ -443,6 +454,7 @@ public class AddEditActivity extends AppCompatActivity {
     }
 
 
+    private PendingIntent sender;
     class MyViewHolder extends RecyclerView.ViewHolder implements View.OnLongClickListener {
 
         public TextView tvName, tvPrice;
@@ -467,6 +479,9 @@ public class AddEditActivity extends AppCompatActivity {
                         tvName.invalidate();
                         mDbHelper.updateItem(item);
                         bought--;
+                        AlarmManager manager = (AlarmManager)getSystemService(ALARM_SERVICE);
+                        manager.cancel(sender);
+                        UIUtils.showToast(AddEditActivity.this, "Alarm Closed");
                     } else if (item.getBuyStatus() == ITEM_NOT_BOUGHT) {
                         mMStrike = true;
                         tvName.getPaint().setStrikeThruText(mMStrike);
@@ -475,6 +490,21 @@ public class AddEditActivity extends AppCompatActivity {
                         item.setBuyStatus(ITEM_BOUGHT);
                         mDbHelper.updateItem(item);
                         bought++;
+                        if (!TextUtils.isEmpty(item.getExpireDate())) {
+                            Intent intent = new Intent(AddEditActivity.this, AlarmReceiver.class);
+                            sender = PendingIntent.getBroadcast(AddEditActivity.this, 0, intent, 0);
+                            long firstTime = SystemClock.elapsedRealtime();     // 开机之后到现在的运行时间(包括睡眠时间)
+                            long systemTime = System.currentTimeMillis();      //当前时间点
+                            long selectTime = DateUtil.stringToDateSimple(item.getExpireDate()).getTime();
+                            // 计算现在时间到设定时间的时间差
+                            long time = selectTime - systemTime;
+                            System.out.println(time+"");
+                            firstTime += time;
+                            // 进行闹铃注册
+                            AlarmManager manager = (AlarmManager)getSystemService(ALARM_SERVICE);
+                            manager.set(AlarmManager.RTC_WAKEUP,System.currentTimeMillis()+time,sender);
+                            UIUtils.showToast(AddEditActivity.this, "Alarm Set");
+                        }
                     }
 
                 }
@@ -543,6 +573,27 @@ public class AddEditActivity extends AppCompatActivity {
                 }
             });
 
+            tiEditExpireDate = (TextInputLayout) editDialog.findViewById(R.id.tiEditExpireDate);
+            if (tiEditExpireDate.getEditText()!=null) {
+                tiEditExpireDate.getEditText().setText(item.getExpireDate());
+            }
+
+            ivExpireDate = (ImageView) editDialog.findViewById(R.id.ivExpireDate);
+            ivExpireDate.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Calendar calendar = Calendar.getInstance();
+                    DatePickerDialog datePickerDialog = new DatePickerDialog(AddEditActivity.this, new DatePickerDialog.OnDateSetListener() {
+                        @Override
+                        public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
+//                            System.out.println(dayOfMonth+"/"+(monthOfYear+1)+"/"+year);
+                            tiEditExpireDate.getEditText().setText(dayOfMonth+"/"+(monthOfYear+1)+"/"+year);
+                        }
+                    }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
+                    datePickerDialog.show();
+                }
+            });
+
             spEditCategory = (Spinner) editDialog.findViewById(R.id.spEditCategory);
             SpinnerAdapter adapter = new ArrayAdapter<>(v.getContext(), android.R.layout.simple_dropdown_item_1line, Constants.CATEGORY);
             spEditCategory.setAdapter(adapter);
@@ -588,6 +639,11 @@ public class AddEditActivity extends AppCompatActivity {
                 item.setBarcode(barcode);
             }
 
+            String expireDate = tiEditExpireDate.getEditText().getText().toString();
+            if (!TextUtils.isEmpty(expireDate)) {
+                item.setExpireDate(expireDate);
+            }
+
             categoryId = spEditCategory.getSelectedItemPosition();
             item.setCategory(String.valueOf(spEditCategory.getSelectedItemPosition()));
             spEditCategory.setSelection(Integer.parseInt(item.getCategory()));
@@ -608,7 +664,7 @@ public class AddEditActivity extends AppCompatActivity {
                 }
             }
 
-            tvTotalPrice.setText("Total Price: " + totalPrice);
+            tvTotalPrice.setText("Total Price: " + NumberHelper.round(totalPrice,2));
 
             editDialog.dismiss();
 
