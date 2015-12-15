@@ -502,7 +502,7 @@ public class AddEditActivity extends AppCompatActivity {
                             firstTime += time;
                             // 进行闹铃注册
                             AlarmManager manager = (AlarmManager)getSystemService(ALARM_SERVICE);
-                            manager.set(AlarmManager.RTC_WAKEUP,System.currentTimeMillis()+time,sender);
+                            manager.set(AlarmManager.RTC_WAKEUP,System.currentTimeMillis()+5000,sender);
                             UIUtils.showToast(AddEditActivity.this, "Alarm Set");
                         }
                     }
