@@ -1,11 +1,16 @@
 package uk.me.feixie.shoppinglist.activity;
 
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDialog;
 import android.support.v7.widget.LinearLayoutManager;
@@ -50,6 +55,8 @@ public class MainActivity extends AppCompatActivity {
     private MyRecycleViewAdapter mAdapter;
     private DBHelper mDbHelper;
     private List<ShopList> mShopLists;
+    private LocationManager mLm;
+    private LocationListener mListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +65,39 @@ public class MainActivity extends AppCompatActivity {
         initToolbar();
         initViews();
         initFABtn();
+//        initLocation();
+    }
+
+    private void initLocation() {
+        mLm = (LocationManager) getSystemService(LOCATION_SERVICE);
+        mListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+
+            }
+        };
+        mLm.requestLocationUpdates(LocationManager.GPS_PROVIDER,1000,0, mListener);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+//        mLm.removeUpdates(mListener);
     }
 
     @Override
@@ -341,18 +381,36 @@ public class MainActivity extends AppCompatActivity {
             llRVMain.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    final ShopList shopList = mShopLists.get(getAdapterPosition());
-//                    System.out.println(shopList.getShow());
-                    shopList.setShow(LIST_NOT_SHOW);
-                    mShopLists.remove(shopList);
-                    mAdapter.notifyItemRemoved(getAdapterPosition());
-
-                    new Thread(){
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    builder.setItems(new String[]{"Delete", "View on Map"}, new DialogInterface.OnClickListener() {
                         @Override
-                        public void run() {
-                            mDbHelper.updateList(shopList);
+                        public void onClick(DialogInterface dialog, int which) {
+                            final ShopList shopList = mShopLists.get(getAdapterPosition());
+                            switch (which) {
+                                case 0:
+                                    shopList.setShow(LIST_NOT_SHOW);
+                                    mShopLists.remove(shopList);
+                                    mAdapter.notifyItemRemoved(getAdapterPosition());
+                                    new Thread(){
+                                        @Override
+                                        public void run() {
+                                            mDbHelper.updateList(shopList);
+                                        }
+                                    }.start();
+                                    break;
+                                case 1:
+                                    System.out.println(shopList.getLatitude()+"/"+shopList.getLongitude());
+                                    Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+                                    intent.putExtra("latitude",shopList.getLatitude());
+                                    intent.putExtra("longitude",shopList.getLongitude());
+                                    startActivity(intent);
+                                    break;
+                            }
                         }
-                    }.start();
+                    });
+                    builder.show();
+
+
 
                     return true;
                 }

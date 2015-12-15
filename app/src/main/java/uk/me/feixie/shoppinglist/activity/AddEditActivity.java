@@ -10,6 +10,12 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.location.Address;
+import android.location.Criteria;
+import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -38,9 +44,13 @@ import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -58,7 +68,7 @@ import uk.me.feixie.shoppinglist.utils.DividerItemDecoration;
 import uk.me.feixie.shoppinglist.utils.NumberHelper;
 import uk.me.feixie.shoppinglist.utils.UIUtils;
 
-public class AddEditActivity extends AppCompatActivity {
+public class AddEditActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     private static final int SPEECH_REQUEST_CODE = 0;
     private static final int ITEM_BOUGHT = 1;
@@ -88,6 +98,8 @@ public class AddEditActivity extends AppCompatActivity {
     private DBHelper mDbHelper;
     private int bought;
 
+    GoogleApiClient mGoogleApiClient;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -96,6 +108,27 @@ public class AddEditActivity extends AppCompatActivity {
         initToolbar();
         initView();
         registerReceiver(mBroadcastReceiver, new IntentFilter("uk.me.feixie.addIntent"));
+
+        // Create an instance of GoogleAPIClient.
+        if (mGoogleApiClient == null) {
+            mGoogleApiClient = new GoogleApiClient.Builder(this)
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .addApi(LocationServices.API)
+                    .build();
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mGoogleApiClient.disconnect();
     }
 
     @Override
@@ -400,6 +433,26 @@ public class AddEditActivity extends AppCompatActivity {
         }
     };
 
+    @Override
+    public void onConnected(Bundle bundle) {
+        Location lastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        if (lastLocation!=null) {
+            System.out.println(lastLocation.getLatitude()+"/"+lastLocation.getLongitude());
+            mShopList.setLatitude(String.valueOf(lastLocation.getLatitude()));
+            mShopList.setLongitude(String.valueOf(lastLocation.getLongitude()));
+        }
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+
+    }
+
 
     class MyRVAdapter extends RecyclerView.Adapter<MyViewHolder> {
 
@@ -479,9 +532,7 @@ public class AddEditActivity extends AppCompatActivity {
                         tvName.invalidate();
                         mDbHelper.updateItem(item);
                         bought--;
-                        AlarmManager manager = (AlarmManager)getSystemService(ALARM_SERVICE);
-                        manager.cancel(sender);
-                        UIUtils.showToast(AddEditActivity.this, "Alarm Closed");
+                        offAlarm();
                     } else if (item.getBuyStatus() == ITEM_NOT_BOUGHT) {
                         mMStrike = true;
                         tvName.getPaint().setStrikeThruText(mMStrike);
@@ -491,20 +542,10 @@ public class AddEditActivity extends AppCompatActivity {
                         mDbHelper.updateItem(item);
                         bought++;
                         if (!TextUtils.isEmpty(item.getExpireDate())) {
-                            Intent intent = new Intent(AddEditActivity.this, AlarmReceiver.class);
-                            sender = PendingIntent.getBroadcast(AddEditActivity.this, 0, intent, 0);
-                            long firstTime = SystemClock.elapsedRealtime();     // 开机之后到现在的运行时间(包括睡眠时间)
-                            long systemTime = System.currentTimeMillis();      //当前时间点
-                            long selectTime = DateUtil.stringToDateSimple(item.getExpireDate()).getTime();
-                            // 计算现在时间到设定时间的时间差
-                            long time = selectTime - systemTime;
-                            System.out.println(time+"");
-                            firstTime += time;
-                            // 进行闹铃注册
-                            AlarmManager manager = (AlarmManager)getSystemService(ALARM_SERVICE);
-                            manager.set(AlarmManager.RTC_WAKEUP,System.currentTimeMillis()+5000,sender);
-                            UIUtils.showToast(AddEditActivity.this, "Alarm Set");
+                            onAlarm(item);
                         }
+//                        getLocation();
+                        mGoogleApiClient.connect();
                     }
 
                 }
@@ -610,6 +651,94 @@ public class AddEditActivity extends AppCompatActivity {
         }
     }
 
+    private void getLocation() {
+        LocationManager lm = (LocationManager) getSystemService(LOCATION_SERVICE);
+//        Criteria criteria = new Criteria();
+//        criteria.setAccuracy(Criteria.ACCURACY_FINE);
+//        criteria.setCostAllowed(true);
+//        String bestProvider = lm.getBestProvider(criteria, true);
+//        System.out.println(bestProvider);
+        boolean providerEnabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
+//        System.out.println(providerEnabled);
+        if (providerEnabled) {
+            Location lastKnownLocation = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if (lastKnownLocation!=null) {
+                System.out.println(lastKnownLocation.getLatitude());
+//                UIUtils.showToast(AddEditActivity.this, lastKnownLocation.getLatitude()+"/"+lastKnownLocation.getLongitude());
+            } else {
+                System.out.println("lastKnowLocation is null");
+            }
+//            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, new LocationListener() {
+//                @Override
+//                public void onLocationChanged(Location location) {
+//
+//                    if (location != null) {
+//                        UIUtils.showToast(AddEditActivity.this, location.getLatitude() + "/" + location.getLongitude());
+//                        System.out.println(location.getLatitude() + "/" + location.getLongitude());
+//                        mShopList.setLatitude(String.valueOf(location.getLatitude()));
+//                        mShopList.setLongitude(String.valueOf(location.getLongitude()));
+//                    }
+//                }
+//
+//                @Override
+//                public void onStatusChanged(String provider, int status, Bundle extras) {
+//
+//                }
+//
+//                @Override
+//                public void onProviderEnabled(String provider) {
+//
+//                }
+//
+//                @Override
+//                public void onProviderDisabled(String provider) {
+//
+//                }
+//            });
+
+//            Location lastKnownLocation = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+//            System.out.println(lastKnownLocation.getLatitude()+"/"+lastKnownLocation.getLongitude());
+//            Geocoder geocoder = new Geocoder(this);
+//            try {
+//                List<Address> location = geocoder.getFromLocation(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude(), 1);
+//                System.out.println(location.get(0).toString());
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+        } else {
+            Intent gpsOptionsIntent = new Intent(
+                    android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            startActivity(gpsOptionsIntent);
+            UIUtils.showToast(this,"Please enable GPS");
+        }
+    }
+
+    private void onAlarm(Item item) {
+        Intent intent = new Intent(AddEditActivity.this, AlarmReceiver.class);
+        intent.putExtra("shop_list",mShopList);
+        intent.putExtra("item",item);
+        sender = PendingIntent.getBroadcast(AddEditActivity.this, 0, intent, 0);
+//                            long firstTime = SystemClock.elapsedRealtime();     // 开机之后到现在的运行时间(包括睡眠时间)
+        long systemTime = System.currentTimeMillis();      //当前时间点
+        long selectTime = DateUtil.stringToDateSimple(item.getExpireDate()).getTime();
+        // 计算现在时间到设定时间的时间差
+        long time = selectTime - systemTime;
+//                            System.out.println(time+"");
+//                            firstTime += time;
+        // 进行闹铃注册
+        AlarmManager manager = (AlarmManager)getSystemService(ALARM_SERVICE);
+        manager.set(AlarmManager.RTC_WAKEUP,System.currentTimeMillis()+time,sender);
+        UIUtils.showToast(AddEditActivity.this, "Expire Reminder Set");
+    }
+
+    private void offAlarm() {
+        if (sender!=null) {
+            AlarmManager manager = (AlarmManager) getSystemService(ALARM_SERVICE);
+            manager.cancel(sender);
+            UIUtils.showToast(AddEditActivity.this, "Expire Reminder Off");
+        }
+    }
+
     private int position;
 
     public void dialogEditCancel(View view) {
@@ -642,11 +771,23 @@ public class AddEditActivity extends AppCompatActivity {
             String expireDate = tiEditExpireDate.getEditText().getText().toString();
             if (!TextUtils.isEmpty(expireDate)) {
                 item.setExpireDate(expireDate);
+            } else {
+                item.setExpireDate(null);
+            }
+
+            if (!TextUtils.isEmpty(expireDate) && item.getBuyStatus()==ITEM_BOUGHT) {
+                onAlarm(item);
+            } else {
+                if (sender!=null) {
+                    offAlarm();
+                }
             }
 
             categoryId = spEditCategory.getSelectedItemPosition();
             item.setCategory(String.valueOf(spEditCategory.getSelectedItemPosition()));
             spEditCategory.setSelection(Integer.parseInt(item.getCategory()));
+
+
 
             mAdapter.notifyItemChanged(position);
 
