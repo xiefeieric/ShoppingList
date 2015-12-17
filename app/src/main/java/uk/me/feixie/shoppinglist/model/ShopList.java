@@ -8,6 +8,7 @@ import java.io.Serializable;
 public class ShopList implements Serializable {
 
     private int id;
+    private int uid;
     private String listDate;
     private String title;
     private String money;
@@ -27,6 +28,14 @@ public class ShopList implements Serializable {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public int getUid() {
+        return uid;
+    }
+
+    public void setUid(int uid) {
+        this.uid = uid;
     }
 
     public String getListDate() {
@@ -89,6 +98,7 @@ public class ShopList implements Serializable {
     public String toString() {
         return "ShopList{" +
                 "id=" + id +
+                ", uid=" + uid +
                 ", listDate='" + listDate + '\'' +
                 ", title='" + title + '\'' +
                 ", money='" + money + '\'' +

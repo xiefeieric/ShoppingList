@@ -183,7 +183,10 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
             }.start();
         } else {
             showList();
-            totalPrice = Double.parseDouble(mShopList.getMoney());
+            if (!TextUtils.isEmpty(mShopList.getMoney())) {
+                totalPrice = Double.parseDouble(mShopList.getMoney());
+            }
+
         }
     }
 
@@ -437,7 +440,7 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
     public void onConnected(Bundle bundle) {
         Location lastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         if (lastLocation!=null) {
-            System.out.println(lastLocation.getLatitude()+"/"+lastLocation.getLongitude());
+//            System.out.println(lastLocation.getLatitude()+"/"+lastLocation.getLongitude());
             mShopList.setLatitude(String.valueOf(lastLocation.getLatitude()));
             mShopList.setLongitude(String.valueOf(lastLocation.getLongitude()));
         }

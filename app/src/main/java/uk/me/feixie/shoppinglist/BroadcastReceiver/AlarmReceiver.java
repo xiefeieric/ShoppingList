@@ -13,7 +13,6 @@ import uk.me.feixie.shoppinglist.R;
 import uk.me.feixie.shoppinglist.activity.AddEditActivity;
 import uk.me.feixie.shoppinglist.model.Item;
 import uk.me.feixie.shoppinglist.model.ShopList;
-import uk.me.feixie.shoppinglist.utils.UIUtils;
 
 public class AlarmReceiver extends BroadcastReceiver {
 
@@ -32,8 +31,8 @@ public class AlarmReceiver extends BroadcastReceiver {
         NotificationCompat.Builder mBuilder =
                 new NotificationCompat.Builder(context)
                         .setSmallIcon(R.drawable.ic_warning_white_24dp)
-                        .setVibrate(new long[]{100,200,300})
-                        .setContentTitle(item.getName()+" is Expiring Soon")
+                        .setVibrate(new long[]{100, 200, 300})
+                        .setContentTitle(item.getName() + " is Expiring Soon")
                         .setContentText("Touch for more information");
 
         //set to default notification sound
@@ -41,7 +40,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         mBuilder.setSound(alarmSound);
 
         Intent resultIntent = new Intent(context, AddEditActivity.class);
-        resultIntent.putExtra("shop_list",shopList);
+        resultIntent.putExtra("shop_list", shopList);
 
         // Because clicking the notification opens a new ("special") activity, there's
         // no need to create an artificial back stack.

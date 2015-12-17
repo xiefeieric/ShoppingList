@@ -10,6 +10,7 @@ import java.util.List;
 
 import uk.me.feixie.shoppinglist.model.Item;
 import uk.me.feixie.shoppinglist.model.ShopList;
+import uk.me.feixie.shoppinglist.model.User;
 
 /**
  * Created by Fei on 02/12/2015.
@@ -18,6 +19,7 @@ public class DBHelper {
 
     public static final String TABLE_ITEM = "item";
     public static final String TABLE_LIST = "list";
+    public static final String TABLE_USER = "user";
     private DB mDB;
 
     public DBHelper(Context context) {
@@ -27,6 +29,7 @@ public class DBHelper {
     public void addList(ShopList list) {
         SQLiteDatabase writableDatabase = mDB.getWritableDatabase();
         ContentValues values = new ContentValues();
+        values.put("uid",list.getUid());
         values.put("listDate", list.getListDate());
         values.put("title", list.getTitle());
         values.put("money", list.getMoney());
@@ -49,6 +52,7 @@ public class DBHelper {
     public void updateList(ShopList list) {
         SQLiteDatabase writableDatabase = mDB.getWritableDatabase();
         ContentValues values = new ContentValues();
+        values.put("uid",list.getUid());
         values.put("listDate",list.getListDate());
         values.put("title",list.getTitle());
         values.put("money",list.getMoney());
@@ -68,6 +72,8 @@ public class DBHelper {
                 ShopList shopList = new ShopList();
                 int id = cursor.getInt(cursor.getColumnIndex("_id"));
                 shopList.setId(id);
+                int uid = cursor.getInt(cursor.getColumnIndex("uid"));
+                shopList.setUid(uid);
                 String listDate = cursor.getString(cursor.getColumnIndex("listDate"));
                 shopList.setListDate(listDate);
                 String title = cursor.getString(cursor.getColumnIndex("title"));
@@ -82,6 +88,37 @@ public class DBHelper {
                 shopList.setLongitude(longitude);
                 int show = cursor.getInt(cursor.getColumnIndex("show"));
                 shopList.setShow(show);
+                shopLists.add(shopList);
+            }
+        }
+        cursor.close();
+        readableDatabase.close();
+        return shopLists;
+    }
+
+    public List<ShopList> queryUserList(int uid) {
+        SQLiteDatabase readableDatabase = mDB.getReadableDatabase();
+        Cursor cursor = readableDatabase.query(TABLE_LIST, null, "uid=? AND show=?", new String[]{String.valueOf(uid),"0"}, null, null, null);
+        List<ShopList> shopLists = new ArrayList<>();
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                ShopList shopList = new ShopList();
+                int id = cursor.getInt(cursor.getColumnIndex("_id"));
+                shopList.setId(id);
+//                int uid1 = cursor.getInt(cursor.getColumnIndex("uid"));
+                shopList.setUid(uid);
+                String listDate = cursor.getString(cursor.getColumnIndex("listDate"));
+                shopList.setListDate(listDate);
+                String title = cursor.getString(cursor.getColumnIndex("title"));
+                shopList.setTitle(title);
+                String money = cursor.getString(cursor.getColumnIndex("money"));
+                shopList.setMoney(money);
+                String itemBought = cursor.getString(cursor.getColumnIndex("itemBought"));
+                shopList.setItemBought(itemBought);
+                String latitude = cursor.getString(cursor.getColumnIndex("latitude"));
+                shopList.setLatitude(latitude);
+                String longitude = cursor.getString(cursor.getColumnIndex("longitude"));
+                shopList.setLongitude(longitude);
                 shopLists.add(shopList);
             }
         }
@@ -175,6 +212,42 @@ public class DBHelper {
         cursor.close();
         readableDatabase.close();
         return null;
+    }
+
+    public List<User> queryAllUser() {
+        SQLiteDatabase readableDatabase = mDB.getReadableDatabase();
+        Cursor cursor = readableDatabase.query(TABLE_USER, null, null, null, null, null, null);
+        List<User> userList = new ArrayList<>();
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                User user = new User();
+                int id = cursor.getInt(cursor.getColumnIndex("_id"));
+                user.setId(id);
+                String name = cursor.getString(cursor.getColumnIndex("name"));
+                user.setName(name);
+                String notice = cursor.getString(cursor.getColumnIndex("notice"));
+                user.setNotice(notice);
+                userList.add(user);
+            }
+        }
+        cursor.close();
+        readableDatabase.close();
+        return userList;
+    }
+
+    public void addUser(User user) {
+        SQLiteDatabase writableDatabase = mDB.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("name",user.getName());
+        values.put("notice",user.getNotice());
+        writableDatabase.insert(TABLE_USER,null,values);
+        writableDatabase.close();
+    }
+
+    public void deleteUser(User user) {
+        SQLiteDatabase writableDatabase = mDB.getWritableDatabase();
+        writableDatabase.delete(TABLE_USER,"_id=?",new String[]{String.valueOf(user.getId())});
+        writableDatabase.close();
     }
 
 }
