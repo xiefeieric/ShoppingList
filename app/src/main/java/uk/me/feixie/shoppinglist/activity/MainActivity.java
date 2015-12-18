@@ -72,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
     private ListView leftDrawer;
     private List<User> userList;
     private MyListAdapter mMyListAdapter;
+    private int leftDrawerPosition;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,18 +96,35 @@ public class MainActivity extends AppCompatActivity {
         new Thread(){
             @Override
             public void run() {
-                mShopLists = mDbHelper.queryList();
-                userList = mDbHelper.queryAllUser();
-                sortList(mShopLists);
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mAdapter.notifyDataSetChanged();
-                        rvMain.scrollToPosition(0);
-                        mMyListAdapter.notifyDataSetChanged();
-                    }
-                });
 
+                if (leftDrawerPosition==0) {
+                    mShopLists = mDbHelper.queryList();
+                    userList = mDbHelper.queryAllUser();
+                    sortList(mShopLists);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mAdapter.notifyDataSetChanged();
+                            rvMain.scrollToPosition(0);
+                            mMyListAdapter.notifyDataSetChanged();
+                        }
+                    });
+
+                } else {
+                    User user = userList.get(leftDrawerPosition);
+                    mShopLists = mDbHelper.queryUserList(user.getId());
+                    sortList(mShopLists);
+                    userList = mDbHelper.queryAllUser();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mAdapter.notifyDataSetChanged();
+                            rvMain.scrollToPosition(0);
+                            mMyListAdapter.notifyDataSetChanged();
+                        }
+                    });
+
+                }
             }
         }.start();
 
@@ -162,6 +180,8 @@ public class MainActivity extends AppCompatActivity {
         leftDrawer.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                leftDrawerPosition = position;
 
                 if (position==0) {
                     mShopLists = mDbHelper.queryList();
