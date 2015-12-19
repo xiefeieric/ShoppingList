@@ -10,15 +10,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.location.Address;
-import android.location.Criteria;
-import android.location.Geocoder;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.speech.RecognizerIntent;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.ActionBar;
@@ -50,11 +45,8 @@ import com.google.android.gms.location.LocationServices;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
-import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 
 import uk.me.feixie.shoppinglist.BroadcastReceiver.AlarmReceiver;
@@ -135,7 +127,7 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
     protected void onResume() {
         super.onResume();
 //        totalPrice = +totalPrice;
-        tvTotalPrice.setText("Total Price: " + NumberHelper.round(totalPrice,2));
+        tvTotalPrice.setText("Total Price: " + NumberHelper.round(totalPrice, 2));
     }
 
     @Override
@@ -166,8 +158,8 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
         rvAddEdit.setAdapter(mAdapter);
         tvTotalPrice = (TextView) findViewById(R.id.tvTotalPrice);
 
-        if (mShopList.getId()<1) {
-            new Thread(){
+        if (mShopList.getId() < 1) {
+            new Thread() {
                 @Override
                 public void run() {
                     int id = mDbHelper.queryListId(mShopList);
@@ -191,12 +183,12 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
     }
 
     private void showList() {
-        new Thread(){
+        new Thread() {
             @Override
             public void run() {
                 mItemList = mDbHelper.queryAllItems(mShopList);
-                for (Item item:mItemList) {
-                    if (item.getBuyStatus()==ITEM_BOUGHT) {
+                for (Item item : mItemList) {
+                    if (item.getBuyStatus() == ITEM_BOUGHT) {
                         bought++;
                     }
                 }
@@ -217,11 +209,11 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
     }
 
     private void updateShopList() {
-        mShopList.setMoney(String.valueOf(NumberHelper.round(totalPrice,2)));
+        mShopList.setMoney(String.valueOf(NumberHelper.round(totalPrice, 2)));
         int size = mItemList.size();
-        mShopList.setItemBought("("+bought+"/"+size+")");
+        mShopList.setItemBought("(" + bought + "/" + size + ")");
 
-        new Thread(){
+        new Thread() {
             @Override
             public void run() {
                 mDbHelper.updateList(mShopList);
@@ -385,7 +377,7 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
                 mItemList.add(item);
                 mAdapter.notifyItemInserted(0);
                 rvAddEdit.scrollToPosition(0);
-                new Thread(){
+                new Thread() {
                     @Override
                     public void run() {
                         mDbHelper.addItem(item);
@@ -416,7 +408,7 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
                 mAdapter.notifyItemInserted(0);
                 rvAddEdit.scrollToPosition(0);
 
-                new Thread(){
+                new Thread() {
                     @Override
                     public void run() {
                         mDbHelper.addItem(item);
@@ -424,13 +416,13 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
                 }.start();
 
                 totalPrice = 0.0;
-                for (Item eachItem:mItemList) {
+                for (Item eachItem : mItemList) {
                     if (!TextUtils.isEmpty(eachItem.getQuantity()) && !TextUtils.isEmpty(eachItem.getPrice())) {
-                        totalPrice = totalPrice + Double.parseDouble(eachItem.getQuantity())*Double.parseDouble(eachItem.getPrice());
+                        totalPrice = totalPrice + Double.parseDouble(eachItem.getQuantity()) * Double.parseDouble(eachItem.getPrice());
                     }
                 }
 
-                tvTotalPrice.setText("Total Price: "+totalPrice);
+                tvTotalPrice.setText("Total Price: " + totalPrice);
             }
 
         }
@@ -439,7 +431,7 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
     @Override
     public void onConnected(Bundle bundle) {
         Location lastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-        if (lastLocation!=null) {
+        if (lastLocation != null) {
 //            System.out.println(lastLocation.getLatitude()+"/"+lastLocation.getLongitude());
             mShopList.setLatitude(String.valueOf(lastLocation.getLatitude()));
             mShopList.setLongitude(String.valueOf(lastLocation.getLongitude()));
@@ -511,6 +503,7 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
 
 
     private PendingIntent sender;
+
     class MyViewHolder extends RecyclerView.ViewHolder implements View.OnLongClickListener {
 
         public TextView tvName, tvPrice;
@@ -570,7 +563,7 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
             mItemList = mDbHelper.queryAllItems(mShopList);
             mAdapter.notifyDataSetChanged();
             //clicked in reverse order
-            Item item = mItemList.get(mItemList.size()-1-position);
+            Item item = mItemList.get(mItemList.size() - 1 - position);
             tiEditName.getEditText().setText(item.getName());
             tiEditName.getEditText().addTextChangedListener(new TextWatcher() {
                 @Override
@@ -595,17 +588,17 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
             });
 
             tiEditQuantity = (TextInputLayout) editDialog.findViewById(R.id.tiEditQuantity);
-            if (tiEditQuantity.getEditText()!=null) {
+            if (tiEditQuantity.getEditText() != null) {
                 tiEditQuantity.getEditText().setText(item.getQuantity());
             }
 
             tiEditPrice = (TextInputLayout) editDialog.findViewById(R.id.tiEditPrice);
-            if (tiEditPrice.getEditText()!=null) {
+            if (tiEditPrice.getEditText() != null) {
                 tiEditPrice.getEditText().setText(item.getPrice());
             }
 
             tiEditBarcode = (TextInputLayout) editDialog.findViewById(R.id.tiEditBarcode);
-            if (tiEditBarcode.getEditText()!=null) {
+            if (tiEditBarcode.getEditText() != null) {
                 tiEditBarcode.getEditText().setText(item.getBarcode());
             }
 
@@ -618,7 +611,7 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
             });
 
             tiEditExpireDate = (TextInputLayout) editDialog.findViewById(R.id.tiEditExpireDate);
-            if (tiEditExpireDate.getEditText()!=null) {
+            if (tiEditExpireDate.getEditText() != null) {
                 tiEditExpireDate.getEditText().setText(item.getExpireDate());
             }
 
@@ -631,7 +624,7 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
                         @Override
                         public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
 //                            System.out.println(dayOfMonth+"/"+(monthOfYear+1)+"/"+year);
-                            tiEditExpireDate.getEditText().setText(dayOfMonth+"/"+(monthOfYear+1)+"/"+year);
+                            tiEditExpireDate.getEditText().setText(dayOfMonth + "/" + (monthOfYear + 1) + "/" + year);
                         }
                     }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
                     datePickerDialog.show();
@@ -646,7 +639,6 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
             ((ViewGroup) editDialog.getWindow().getDecorView())
                     .getChildAt(0).startAnimation(AnimationUtils.loadAnimation(
                     tiEditName.getContext(), android.R.anim.slide_in_left));
-
 
 
             editDialog.show();
@@ -665,7 +657,7 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
 //        System.out.println(providerEnabled);
         if (providerEnabled) {
             Location lastKnownLocation = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            if (lastKnownLocation!=null) {
+            if (lastKnownLocation != null) {
                 System.out.println(lastKnownLocation.getLatitude());
 //                UIUtils.showToast(AddEditActivity.this, lastKnownLocation.getLatitude()+"/"+lastKnownLocation.getLongitude());
             } else {
@@ -712,14 +704,14 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
             Intent gpsOptionsIntent = new Intent(
                     android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
             startActivity(gpsOptionsIntent);
-            UIUtils.showToast(this,"Please enable GPS");
+            UIUtils.showToast(this, "Please enable GPS");
         }
     }
 
     private void onAlarm(Item item) {
         Intent intent = new Intent(AddEditActivity.this, AlarmReceiver.class);
-        intent.putExtra("shop_list",mShopList);
-        intent.putExtra("item",item);
+        intent.putExtra("shop_list", mShopList);
+        intent.putExtra("item", item);
         sender = PendingIntent.getBroadcast(AddEditActivity.this, 0, intent, 0);
 //                            long firstTime = SystemClock.elapsedRealtime();     // 开机之后到现在的运行时间(包括睡眠时间)
         long systemTime = System.currentTimeMillis();      //当前时间点
@@ -729,13 +721,13 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
 //                            System.out.println(time+"");
 //                            firstTime += time;
         // 进行闹铃注册
-        AlarmManager manager = (AlarmManager)getSystemService(ALARM_SERVICE);
-        manager.set(AlarmManager.RTC_WAKEUP,System.currentTimeMillis()+time,sender);
+        AlarmManager manager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        manager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + time, sender);
         UIUtils.showToast(AddEditActivity.this, "Expire Reminder Set");
     }
 
     private void offAlarm() {
-        if (sender!=null) {
+        if (sender != null) {
             AlarmManager manager = (AlarmManager) getSystemService(ALARM_SERVICE);
             manager.cancel(sender);
             UIUtils.showToast(AddEditActivity.this, "Expire Reminder Off");
@@ -778,10 +770,10 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
                 item.setExpireDate(null);
             }
 
-            if (!TextUtils.isEmpty(expireDate) && item.getBuyStatus()==ITEM_BOUGHT) {
+            if (!TextUtils.isEmpty(expireDate) && item.getBuyStatus() == ITEM_BOUGHT) {
                 onAlarm(item);
             } else {
-                if (sender!=null) {
+                if (sender != null) {
                     offAlarm();
                 }
             }
@@ -791,10 +783,9 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
             spEditCategory.setSelection(Integer.parseInt(item.getCategory()));
 
 
-
             mAdapter.notifyItemChanged(position);
 
-            new Thread(){
+            new Thread() {
                 @Override
                 public void run() {
                     mDbHelper.updateItem(item);
@@ -802,13 +793,13 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
             }.start();
 
             totalPrice = 0.0;
-            for (Item eachItem:mItemList) {
+            for (Item eachItem : mItemList) {
                 if (!TextUtils.isEmpty(eachItem.getQuantity()) && !TextUtils.isEmpty(eachItem.getPrice())) {
-                    totalPrice = totalPrice + Double.parseDouble(eachItem.getQuantity())*Double.parseDouble(eachItem.getPrice());
+                    totalPrice = totalPrice + Double.parseDouble(eachItem.getQuantity()) * Double.parseDouble(eachItem.getPrice());
                 }
             }
 
-            tvTotalPrice.setText("Total Price: " + NumberHelper.round(totalPrice,2));
+            tvTotalPrice.setText("Total Price: " + NumberHelper.round(totalPrice, 2));
 
             editDialog.dismiss();
 
@@ -837,7 +828,7 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
                 mItemList.remove(item);
                 mAdapter.notifyItemRemoved(position);
 
-                new Thread(){
+                new Thread() {
                     @Override
                     public void run() {
                         mDbHelper.deleteItem(item);

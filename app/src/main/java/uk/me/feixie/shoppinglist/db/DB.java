@@ -24,7 +24,7 @@ public class DB extends SQLiteOpenHelper {
 //        private String price;
 //        private String quantity;
 //        private boolean buyStatus;
-        String sql = "CREATE TABLE user (_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, notice TEXT)";
+        String sql = "CREATE TABLE user (_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, notice TEXT, show TEXT)";
         db.execSQL(sql);
 
         sql = "CREATE TABLE list (_id INTEGER PRIMARY KEY AUTOINCREMENT, uid INTEGER NOT NULL, listDate TEXT, " +
@@ -39,6 +39,7 @@ public class DB extends SQLiteOpenHelper {
 
         ContentValues values = new ContentValues();
         values.put("name","Show All");
+        values.put("show","2");
         db.insert("user",null,values);
 //        private int id;
 //        private String listDate;

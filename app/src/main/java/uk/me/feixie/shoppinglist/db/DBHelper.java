@@ -216,7 +216,7 @@ public class DBHelper {
 
     public List<User> queryAllUser() {
         SQLiteDatabase readableDatabase = mDB.getReadableDatabase();
-        Cursor cursor = readableDatabase.query(TABLE_USER, null, null, null, null, null, null);
+        Cursor cursor = readableDatabase.query(TABLE_USER, null, "show=?", new String[]{"2"}, null, null, null);
         List<User> userList = new ArrayList<>();
         if (cursor != null) {
             while (cursor.moveToNext()) {
@@ -227,6 +227,8 @@ public class DBHelper {
                 user.setName(name);
                 String notice = cursor.getString(cursor.getColumnIndex("notice"));
                 user.setNotice(notice);
+//                String show = cursor.getString(cursor.getColumnIndex("show"));
+//                user.setShow(Integer.parseInt(show));
                 userList.add(user);
             }
         }
@@ -240,6 +242,7 @@ public class DBHelper {
         ContentValues values = new ContentValues();
         values.put("name",user.getName());
         values.put("notice",user.getNotice());
+        values.put("show",String.valueOf(user.getShow()));
         writableDatabase.insert(TABLE_USER,null,values);
         writableDatabase.close();
     }
@@ -248,6 +251,15 @@ public class DBHelper {
         SQLiteDatabase writableDatabase = mDB.getWritableDatabase();
         writableDatabase.delete(TABLE_USER,"_id=?",new String[]{String.valueOf(user.getId())});
         writableDatabase.close();
+    }
+
+    public void updateUser(User user) {
+        SQLiteDatabase writableDatabase = mDB.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("name",user.getName());
+        values.put("notice",user.getNotice());
+        values.put("show",String.valueOf(user.getShow()));
+        writableDatabase.update(TABLE_USER,values,"_id=?",new String[]{String.valueOf(user.getId())});
     }
 
 }

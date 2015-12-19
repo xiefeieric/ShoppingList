@@ -8,6 +8,8 @@ public class User {
     private int id;
     private String name;
     private String notice;
+    //2 means show, 3 means not show
+    private int show;
 
     public int getId() {
         return id;
@@ -33,12 +35,21 @@ public class User {
         this.notice = notice;
     }
 
+    public int getShow() {
+        return show;
+    }
+
+    public void setShow(int show) {
+        this.show = show;
+    }
+
     @Override
     public String toString() {
         return "User{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", notice='" + notice + '\'' +
+                ", show=" + show +
                 '}';
     }
 }

@@ -2,9 +2,6 @@ package uk.me.feixie.shoppinglist.activity;
 
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -20,28 +17,19 @@ import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.text.format.DateFormat;
-import android.text.format.DateUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import org.w3c.dom.Text;
-
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -51,7 +39,6 @@ import uk.me.feixie.shoppinglist.R;
 import uk.me.feixie.shoppinglist.db.DBHelper;
 import uk.me.feixie.shoppinglist.model.ShopList;
 import uk.me.feixie.shoppinglist.model.User;
-import uk.me.feixie.shoppinglist.utils.Constants;
 import uk.me.feixie.shoppinglist.utils.DateUtil;
 import uk.me.feixie.shoppinglist.utils.DividerItemDecoration;
 import uk.me.feixie.shoppinglist.utils.UIUtils;
@@ -60,6 +47,8 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int LIST_SHOW = 0;
     private static final int LIST_NOT_SHOW = 1;
+    public static final int SHOW_GROUP = 2;
+    public static final int SHOW_GROUP_NOT = 3;
 
     private DrawerLayout dlMain;
     private ActionBarDrawerToggle mToggle;
@@ -93,11 +82,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onRestart() {
         super.onRestart();
-        new Thread(){
+        new Thread() {
             @Override
             public void run() {
 
-                if (leftDrawerPosition==0) {
+                if (leftDrawerPosition == 0) {
                     mShopLists = mDbHelper.queryList();
                     userList = mDbHelper.queryAllUser();
                     sortList(mShopLists);
@@ -153,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
         mAdapter = new MyRecycleViewAdapter();
         rvMain.setAdapter(mAdapter);
 
-        new Thread(){
+        new Thread() {
             @Override
             public void run() {
                 mShopLists = mDbHelper.queryList();
@@ -175,7 +164,7 @@ public class MainActivity extends AppCompatActivity {
         leftDrawer = (ListView) findViewById(R.id.left_drawer);
         mMyListAdapter = new MyListAdapter();
         leftDrawer.setAdapter(mMyListAdapter);
-        leftDrawer.setItemChecked(0,true);
+        leftDrawer.setItemChecked(0, true);
         leftDrawer.setDivider(getResources().getDrawable(android.R.drawable.divider_horizontal_bright));
         leftDrawer.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -183,20 +172,70 @@ public class MainActivity extends AppCompatActivity {
 
                 leftDrawerPosition = position;
 
-                if (position==0) {
+                if (position == 0) {
                     mShopLists = mDbHelper.queryList();
                     sortList(mShopLists);
                     mAdapter.notifyDataSetChanged();
 
                 } else {
-                    User user = userList.get(position);
+                    final User user = userList.get(position);
                     mShopLists = mDbHelper.queryUserList(user.getId());
                     sortList(mShopLists);
                     mAdapter.notifyDataSetChanged();
 
+                    if (!TextUtils.isEmpty(user.getNotice())) {
+                        Snackbar snackbar = Snackbar.make(view, user.getNotice(), Snackbar.LENGTH_INDEFINITE);
+                        snackbar.setAction("More", new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                                builder.setMessage(user.getNotice());
+                                builder.setPositiveButton("Ok", null);
+                                builder.show();
+                            }
+                        });
+                        snackbar.show();
+                    }
+
                 }
 
                 dlMain.closeDrawer(leftDrawer);
+            }
+        });
+
+        //long click to delete item from list
+
+        leftDrawer.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, final int position, long id) {
+
+                if (position!=0) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    builder.setTitle("Warning");
+                    builder.setMessage("Are you sure you want to delete?");
+                    builder.setNegativeButton("Cancel",null);
+                    builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            User user = userList.get(position);
+                            List<ShopList> shopLists = mDbHelper.queryUserList(user.getId());
+                            if (shopLists.size()==0) {
+                                //                            System.out.println(user.toString());
+                                user.setShow(SHOW_GROUP_NOT);
+//                            System.out.println(user.toString());
+                                mDbHelper.updateUser(user);
+                                userList = mDbHelper.queryAllUser();
+//                            System.out.println(userList.size());
+                                mMyListAdapter.notifyDataSetChanged();
+                            } else {
+                                UIUtils.showToast(MainActivity.this,"Please change or delete related shopping list first!");
+                            }
+
+                        }
+                    });
+                    builder.show();
+                }
+                return true;
             }
         });
 
@@ -250,7 +289,11 @@ public class MainActivity extends AppCompatActivity {
                         if (!TextUtils.isEmpty(title)) {
                             final ShopList shopList = new ShopList();
                             shopList.setTitle(title);
-                            shopList.setUid(userList.get(0).getId());
+                            //set uid based on selected left drawer item
+//                            System.out.println("size:"+userList.size());
+//                            System.out.println("position:"+leftDrawerPosition);
+//                            System.out.println("userid:"+userList.get(leftDrawerPosition).getId());
+                            shopList.setUid(userList.get(leftDrawerPosition).getId());
                             //0=show,1=hide
                             shopList.setShow(LIST_SHOW);
                             SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
@@ -313,19 +356,19 @@ public class MainActivity extends AppCompatActivity {
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_total_cost) {
             double total = 0;
-            for (ShopList shopList:mShopLists) {
+            for (ShopList shopList : mShopLists) {
                 if (!TextUtils.isEmpty(shopList.getMoney()))
-                total = total+Double.parseDouble(shopList.getMoney());
+                    total = total + Double.parseDouble(shopList.getMoney());
             }
 
-            Snackbar.make(rvMain,"Total cost is: "+total,Snackbar.LENGTH_LONG).show();
+            Snackbar.make(rvMain, "Total cost is: " + total, Snackbar.LENGTH_LONG).show();
 
             return true;
         }
 
         if (id == R.id.action_add_group) {
             AlertDialog.Builder addUserDialog = new AlertDialog.Builder(this);
-            View view = View.inflate(this,R.layout.add_user_group_dialog,null);
+            View view = View.inflate(this, R.layout.add_user_group_dialog, null);
             addUserDialog.setView(view);
             final TextInputLayout tiAddUserGroup = (TextInputLayout) view.findViewById(R.id.tiAddUserGroup);
             final TextInputLayout tiAddUserNotice = (TextInputLayout) view.findViewById(R.id.tiAddUserNotice);
@@ -335,6 +378,27 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 tiAddUserGroup.setErrorEnabled(false);
             }
+            tiAddUserGroup.getEditText().addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    if (TextUtils.isEmpty(tiAddUserGroup.getEditText().getText().toString())) {
+                        tiAddUserGroup.setErrorEnabled(true);
+                        tiAddUserGroup.setError("Name can not be empty!");
+                    } else {
+                        tiAddUserGroup.setErrorEnabled(false);
+                    }
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+
+                }
+            });
             addUserDialog.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
@@ -342,13 +406,15 @@ public class MainActivity extends AppCompatActivity {
                         final User user = new User();
                         user.setName(tiAddUserGroup.getEditText().getText().toString());
                         user.setNotice(tiAddUserNotice.getEditText().getText().toString());
+                        user.setShow(SHOW_GROUP);
                         userList.add(user);
                         mMyListAdapter.notifyDataSetChanged();
 
-                        new Thread(){
+                        new Thread() {
                             @Override
                             public void run() {
                                 mDbHelper.addUser(user);
+                                userList = mDbHelper.queryAllUser();
                             }
                         }.start();
 
@@ -358,7 +424,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
-            addUserDialog.setNegativeButton("Cancel",null);
+            addUserDialog.setNegativeButton("Cancel", null);
             addUserDialog.show();
             return true;
         }
@@ -390,12 +456,13 @@ public class MainActivity extends AppCompatActivity {
 
 
     private int pressed;
+
     @Override
     public void onBackPressed() {
-        if (pressed%2==0) {
-            UIUtils.showToast(this,"One more click to quite the app");
+        if (pressed % 2 == 0) {
+            UIUtils.showToast(this, "One more click to quite the app");
         } else {
-           super.onBackPressed();
+            super.onBackPressed();
         }
         pressed++;
     }
@@ -403,10 +470,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        pressed=0;
+        pressed = 0;
     }
-
-
 
 
     class MyRecycleViewAdapter extends RecyclerView.Adapter<MyViewHolder> {
@@ -414,7 +479,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View view = View.inflate(parent.getContext(),R.layout.item_main_rv,null);
+            View view = View.inflate(parent.getContext(), R.layout.item_main_rv, null);
             MyViewHolder myViewHolder = new MyViewHolder(view);
             return myViewHolder;
         }
@@ -430,7 +495,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public int getItemCount() {
-            if (mShopLists!=null) {
+            if (mShopLists != null) {
                 return mShopLists.size();
             } else {
                 return 0;
@@ -460,8 +525,8 @@ public class MainActivity extends AppCompatActivity {
                 public void onClick(View v) {
 //                    UIUtils.showToast(MainActivity.this, "CLICKED: "+getAdapterPosition());
                     ShopList shopList = mShopLists.get(getAdapterPosition());
-                    Intent intent  = new Intent(MainActivity.this,AddEditActivity.class);
-                    intent.putExtra("shop_list",shopList);
+                    Intent intent = new Intent(MainActivity.this, AddEditActivity.class);
+                    intent.putExtra("shop_list", shopList);
                     startActivity(intent);
                 }
             });
@@ -470,7 +535,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public boolean onLongClick(View v) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                    builder.setItems(new String[]{"Delete", "View on Map","Change Group"}, new DialogInterface.OnClickListener() {
+                    builder.setItems(new String[]{"Delete", "View on Map", "Change Group"}, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             final ShopList shopList = mShopLists.get(getAdapterPosition());
@@ -479,7 +544,7 @@ public class MainActivity extends AppCompatActivity {
                                     shopList.setShow(LIST_NOT_SHOW);
                                     mShopLists.remove(shopList);
                                     mAdapter.notifyItemRemoved(getAdapterPosition());
-                                    new Thread(){
+                                    new Thread() {
                                         @Override
                                         public void run() {
                                             mDbHelper.updateList(shopList);
@@ -489,19 +554,19 @@ public class MainActivity extends AppCompatActivity {
                                 case 1:
 //                                    System.out.println(shopList.getLatitude()+"/"+shopList.getLongitude());
                                     Intent intent = new Intent(MainActivity.this, MapsActivity.class);
-                                    intent.putExtra("latitude",shopList.getLatitude());
-                                    intent.putExtra("longitude",shopList.getLongitude());
+                                    intent.putExtra("latitude", shopList.getLatitude());
+                                    intent.putExtra("longitude", shopList.getLongitude());
                                     startActivity(intent);
                                     break;
 
                                 case 2:
                                     AlertDialog.Builder dialogChangeGroup = new AlertDialog.Builder(MainActivity.this);
-                                    View view = View.inflate(MainActivity.this,R.layout.dialog_change_user_group,null);
+                                    View view = View.inflate(MainActivity.this, R.layout.dialog_change_user_group, null);
                                     dialogChangeGroup.setView(view);
                                     final Spinner spinChangeGroup = (Spinner) view.findViewById(R.id.spinChangeGroup);
                                     spinChangeGroup.setAdapter(mMyListAdapter);
 //                                    System.out.println("uid:"+shopList.getUid()+"id:"+shopList.getId());
-                                    spinChangeGroup.setSelection(shopList.getUid()-1);
+                                    spinChangeGroup.setSelection(shopList.getUid() - 1);
                                     dialogChangeGroup.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialog, int which) {
@@ -511,7 +576,7 @@ public class MainActivity extends AppCompatActivity {
 
                                         }
                                     });
-                                    dialogChangeGroup.setNegativeButton("Cancel",null);
+                                    dialogChangeGroup.setNegativeButton("Cancel", null);
                                     dialogChangeGroup.show();
 
                                     break;
@@ -521,7 +586,6 @@ public class MainActivity extends AppCompatActivity {
                     builder.show();
 
 
-
                     return true;
                 }
             });
@@ -529,11 +593,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    class MyListAdapter extends BaseAdapter{
+    class MyListAdapter extends BaseAdapter {
 
         @Override
         public int getCount() {
-            if (userList!=null) {
+            if (userList != null) {
                 return userList.size();
             } else {
                 return 0;
@@ -553,9 +617,9 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             ViewHolder holder;
-            if (convertView==null) {
+            if (convertView == null) {
                 holder = new ViewHolder();
-                convertView = View.inflate(MainActivity.this, R.layout.item_list_main,null);
+                convertView = View.inflate(MainActivity.this, R.layout.item_list_main, null);
                 holder.tvUser = (TextView) convertView.findViewById(R.id.tvUser);
                 convertView.setTag(holder);
             } else {
