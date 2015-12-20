@@ -289,7 +289,7 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
         }
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_share) {
             return true;
         }
 
