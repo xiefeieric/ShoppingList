@@ -26,7 +26,7 @@ public class DBHelper {
         mDB = new DB(context);
     }
 
-    public void addList(ShopList list) {
+    public synchronized void addList(ShopList list) {
         SQLiteDatabase writableDatabase = mDB.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put("uid",list.getUid());
@@ -41,7 +41,7 @@ public class DBHelper {
         writableDatabase.close();
     }
 
-    public void hideList(ShopList list) {
+    public synchronized void hideList(ShopList list) {
         SQLiteDatabase writableDatabase = mDB.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put("show", 1);
@@ -49,7 +49,7 @@ public class DBHelper {
         writableDatabase.close();
     }
 
-    public void updateList(ShopList list) {
+    public synchronized void updateList(ShopList list) {
         SQLiteDatabase writableDatabase = mDB.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put("uid",list.getUid());
@@ -63,7 +63,7 @@ public class DBHelper {
         writableDatabase.update(TABLE_LIST,values,"_id=?",new String[]{String.valueOf(list.getId())});
     }
 
-    public List<ShopList> queryList() {
+    public synchronized List<ShopList> queryList() {
         SQLiteDatabase readableDatabase = mDB.getReadableDatabase();
         Cursor cursor = readableDatabase.query(TABLE_LIST, null, "show=?", new String[]{"0"}, null, null, null);
         List<ShopList> shopLists = new ArrayList<>();
@@ -96,7 +96,7 @@ public class DBHelper {
         return shopLists;
     }
 
-    public List<ShopList> queryUserList(int uid) {
+    public synchronized List<ShopList> queryUserList(int uid) {
         SQLiteDatabase readableDatabase = mDB.getReadableDatabase();
         Cursor cursor = readableDatabase.query(TABLE_LIST, null, "uid=? AND show=?", new String[]{String.valueOf(uid),"0"}, null, null, null);
         List<ShopList> shopLists = new ArrayList<>();
@@ -127,7 +127,7 @@ public class DBHelper {
         return shopLists;
     }
 
-    public int queryListId(ShopList list) {
+    public synchronized int queryListId(ShopList list) {
         SQLiteDatabase readableDatabase = mDB.getReadableDatabase();
         Cursor cursor = readableDatabase.query(TABLE_LIST, new String[]{"_id"}, "title=? AND listDate=?",
                 new String[]{list.getTitle(), list.getListDate()}, null, null, null);
@@ -143,7 +143,7 @@ public class DBHelper {
         return 0;
     }
 
-    public void addItem(Item item) {
+    public synchronized void addItem(Item item) {
         SQLiteDatabase writableDatabase = mDB.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put("slId", item.getSlId());
@@ -158,13 +158,13 @@ public class DBHelper {
         writableDatabase.close();
     }
 
-    public void deleteItem(Item item) {
+    public synchronized void deleteItem(Item item) {
         SQLiteDatabase writableDatabase = mDB.getWritableDatabase();
         writableDatabase.delete(TABLE_ITEM, "_id=?", new String[]{String.valueOf(item.getId())});
         writableDatabase.close();
     }
 
-    public void updateItem(Item item) {
+    public synchronized void updateItem(Item item) {
         SQLiteDatabase writableDatabase = mDB.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put("name", item.getName());
@@ -178,7 +178,7 @@ public class DBHelper {
         writableDatabase.close();
     }
 
-    public List<Item> queryAllItems(ShopList shopList) {
+    public synchronized List<Item> queryAllItems(ShopList shopList) {
         SQLiteDatabase readableDatabase = mDB.getReadableDatabase();
         Cursor cursor = readableDatabase.query(TABLE_ITEM, null, "slId=?", new String[]{String.valueOf(shopList.getId())}, null, null, null);
         List<Item> items = new ArrayList<>();
@@ -208,13 +208,55 @@ public class DBHelper {
             cursor.close();
             readableDatabase.close();
             return items;
+        } else {
+            cursor.close();
+            readableDatabase.close();
+            return null;
+        }
+    }
+
+    public synchronized List<Item> queryMostUsedItems() {
+        SQLiteDatabase readableDatabase = mDB.getReadableDatabase();
+        String sql = "SELECT       `name`,\n" +
+                "             COUNT(`name`) AS `name_occurrence` \n" +
+                "    FROM     `item`\n" +
+                "    GROUP BY `name`\n" +
+                "    ORDER BY `name_occurrence` DESC";
+        Cursor cursor = readableDatabase.rawQuery(sql, null);
+        List<Item> items = new ArrayList<>();
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                Item item = new Item();
+//                int id = cursor.getInt(cursor.getColumnIndex("_id"));
+//                item.setId(id);
+//                int slId = cursor.getInt(cursor.getColumnIndex("slId"));
+//                item.setSlId(slId);
+                String name = cursor.getString(cursor.getColumnIndex("name"));
+                item.setName(name);
+//                String category = cursor.getString(cursor.getColumnIndex("category"));
+//                item.setCategory(category);
+//                String barcode = cursor.getString(cursor.getColumnIndex("barcode"));
+//                item.setBarcode(barcode);
+//                String price = cursor.getString(cursor.getColumnIndex("price"));
+//                item.setPrice(price);
+//                String quantity = cursor.getString(cursor.getColumnIndex("quantity"));
+//                item.setQuantity(quantity);
+//                String expireDate = cursor.getString(cursor.getColumnIndex("expireDate"));
+//                item.setExpireDate(expireDate);
+//                int buyStatus = cursor.getInt(cursor.getColumnIndex("buyStatus"));
+//                item.setBuyStatus(buyStatus);
+                items.add(item);
+            }
+            cursor.close();
+            readableDatabase.close();
+            return items;
         }
         cursor.close();
         readableDatabase.close();
         return null;
     }
 
-    public List<User> queryAllUser() {
+    public synchronized List<User> queryAllUser() {
         SQLiteDatabase readableDatabase = mDB.getReadableDatabase();
         Cursor cursor = readableDatabase.query(TABLE_USER, null, "show=?", new String[]{"2"}, null, null, null);
         List<User> userList = new ArrayList<>();
@@ -237,7 +279,7 @@ public class DBHelper {
         return userList;
     }
 
-    public void addUser(User user) {
+    public synchronized void addUser(User user) {
         SQLiteDatabase writableDatabase = mDB.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put("name",user.getName());
@@ -247,13 +289,13 @@ public class DBHelper {
         writableDatabase.close();
     }
 
-    public void deleteUser(User user) {
+    public synchronized void deleteUser(User user) {
         SQLiteDatabase writableDatabase = mDB.getWritableDatabase();
         writableDatabase.delete(TABLE_USER,"_id=?",new String[]{String.valueOf(user.getId())});
         writableDatabase.close();
     }
 
-    public void updateUser(User user) {
+    public synchronized void updateUser(User user) {
         SQLiteDatabase writableDatabase = mDB.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put("name",user.getName());

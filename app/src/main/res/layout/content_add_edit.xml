@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -10,20 +11,46 @@
     tools:context="uk.me.feixie.shoppinglist.activity.AddEditActivity"
     tools:showIn="@layout/activity_add_edit">
 
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/rvAddEdit"
+    <android.support.v4.widget.DrawerLayout
+        android:id="@+id/dlAddEdit"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1">
-    </android.support.v7.widget.RecyclerView>
+        android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/tvTotalPrice"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Total Price: "
-        android:textColor="@android:color/black"
-        android:background="@color/tfblue"
-        android:padding="5dp"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/rvAddEdit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1">
+            </android.support.v7.widget.RecyclerView>
+
+            <TextView
+                android:id="@+id/tvTotalPrice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/tfblue"
+                android:padding="5dp"
+                android:text="Total Price: "
+                android:textColor="@android:color/black"/>
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/flAddEditLeftDrawer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="start"
+            android:padding="10dp">
+
+            <me.gujun.android.taggroup.TagGroup
+                android:id="@+id/tag_group"
+                style="@style/TagGroup.Large" />
+
+        </FrameLayout>
+
+    </android.support.v4.widget.DrawerLayout>
 
 </LinearLayout>

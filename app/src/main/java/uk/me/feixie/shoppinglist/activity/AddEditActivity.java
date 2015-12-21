@@ -51,6 +51,7 @@ import java.util.List;
 
 import cn.sharesdk.framework.ShareSDK;
 import cn.sharesdk.onekeyshare.OnekeyShare;
+import me.gujun.android.taggroup.TagGroup;
 import uk.me.feixie.shoppinglist.BroadcastReceiver.AlarmReceiver;
 import uk.me.feixie.shoppinglist.R;
 import uk.me.feixie.shoppinglist.db.DBHelper;
@@ -93,6 +94,9 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
     private int bought;
 
     GoogleApiClient mGoogleApiClient;
+    private List<Item> mMostUsedItems;
+    private List<String> mTagList;
+    private TagGroup mTagGroup;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -180,8 +184,58 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
             if (!TextUtils.isEmpty(mShopList.getMoney())) {
                 totalPrice = Double.parseDouble(mShopList.getMoney());
             }
-
         }
+
+        mTagGroup = (TagGroup) findViewById(R.id.tag_group);
+        mTagList = new ArrayList<>();
+        new Thread(){
+            @Override
+            public void run() {
+                mMostUsedItems = mDbHelper.queryMostUsedItems();
+//                System.out.println("mostUsedItems:"+ mMostUsedItems.size());
+//                System.out.println(mMostUsedItems.toString());
+                for (Item item: mMostUsedItems) {
+//                    System.out.println(item.getName());
+                    mTagList.add(item.getName());
+                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mTagGroup.setTags(mTagList);
+                    }
+                });
+
+            }
+        }.start();
+
+        mTagGroup.setOnTagClickListener(new TagGroup.OnTagClickListener() {
+            @Override
+            public void onTagClick(String tag) {
+                UIUtils.showToast(AddEditActivity.this, tag);
+                final Item item = new Item();
+                item.setName(tag);
+                item.setSlId(mShopList.getId());
+                item.setBuyStatus(ITEM_NOT_BOUGHT);
+                item.setCategory("0");
+                mItemList.add(item);
+                mAdapter.notifyItemInserted(0);
+                rvAddEdit.scrollToPosition(0);
+                new Thread() {
+                    @Override
+                    public void run() {
+                        mDbHelper.addItem(item);
+                        mItemList = mDbHelper.queryAllItems(mShopList);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mAdapter.notifyDataSetChanged();
+                            }
+                        });
+                    }
+                }.start();
+
+            }
+        });
     }
 
     private void showList() {

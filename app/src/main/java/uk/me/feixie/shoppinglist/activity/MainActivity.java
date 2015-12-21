@@ -355,7 +355,7 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_total_cost) {
-            double total = 0;
+            double total = 0.0;
             for (ShopList shopList : mShopLists) {
                 if (!TextUtils.isEmpty(shopList.getMoney()))
                     total = total + Double.parseDouble(shopList.getMoney());

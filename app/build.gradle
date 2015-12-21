@@ -33,4 +33,5 @@ dependencies {
     compile 'com.google.android.gms:play-services-auth:8.3.0'
     compile 'com.google.android.gms:play-services-gcm:8.3.0'
     compile project(':onekeyshare')
+    compile 'me.gujun.android.taggroup:library:1.4@aar'
 }
