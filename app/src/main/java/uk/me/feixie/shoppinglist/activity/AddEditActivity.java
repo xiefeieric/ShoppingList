@@ -49,6 +49,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
+import cn.sharesdk.framework.ShareSDK;
+import cn.sharesdk.onekeyshare.OnekeyShare;
 import uk.me.feixie.shoppinglist.BroadcastReceiver.AlarmReceiver;
 import uk.me.feixie.shoppinglist.R;
 import uk.me.feixie.shoppinglist.db.DBHelper;
@@ -290,6 +292,7 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_share) {
+            showShare();
             return true;
         }
 
@@ -839,6 +842,54 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
             }
         });
         builder.show();
+    }
+
+    private void showShare() {
+        ShareSDK.initSDK(this);
+        OnekeyShare oks = new OnekeyShare();
+        //关闭sso授权
+        oks.disableSSOWhenAuthorize();
+
+        // title标题：微信、QQ（新浪微博不需要标题）
+        String title = mShopList.getTitle();
+        oks.setTitle(title);  //最多30个字符
+
+//         text是分享文本：所有平台都需要这个字段
+
+        StringBuffer buffer = new StringBuffer();
+        for (Item item:mItemList) {
+            String name = item.getName();
+            String quantity = item.getQuantity();
+            if (TextUtils.isEmpty(quantity)) {
+                buffer.append(name);
+                buffer.append("\n");
+            } else {
+                buffer.append(name+"("+quantity+")");
+                buffer.append("\n");
+            }
+        }
+        String content = buffer.toString();
+        oks.setText(content);  //最多40个字符
+
+        // imagePath是图片的本地路径：除Linked-In以外的平台都支持此参数
+        //oks.setImagePath(Environment.getExternalStorageDirectory() + "/meinv.jpg");//确保SDcard下面存在此张图片
+//        String imagePath = mNote.getImagePath();
+//        if (!TextUtils.isEmpty(imagePath)) {
+//            String rawImagePath = Uri.parse(imagePath).getPath();
+//            oks.setImagePath(rawImagePath);
+//        }
+
+        //网络图片的url：所有平台
+        //oks.setImageUrl("http://7sby7r.com1.z0.glb.clouddn.com/CYSJ_02.jpg");//网络图片rul
+
+        // url：仅在微信（包括好友和朋友圈）中使用
+//        oks.setUrl("http://sharesdk.cn");   //网友点进链接后，可以看到分享的详情
+
+        // Url：仅在QQ空间使用
+//        oks.setTitleUrl("http://www.baidu.com");  //网友点进链接后，可以看到分享的详情
+
+        // 启动分享GUI
+        oks.show(this);
     }
 
 }
