@@ -211,7 +211,7 @@ public class AddEditActivity extends AppCompatActivity implements GoogleApiClien
         mTagGroup.setOnTagClickListener(new TagGroup.OnTagClickListener() {
             @Override
             public void onTagClick(String tag) {
-                UIUtils.showToast(AddEditActivity.this, tag);
+//                UIUtils.showToast(AddEditActivity.this, tag);
                 final Item item = new Item();
                 item.setName(tag);
                 item.setSlId(mShopList.getId());

@@ -45,9 +45,14 @@
             android:layout_gravity="start"
             android:padding="10dp">
 
-            <me.gujun.android.taggroup.TagGroup
-                android:id="@+id/tag_group"
-                style="@style/TagGroup.Large" />
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <me.gujun.android.taggroup.TagGroup
+                    android:id="@+id/tag_group"
+                    style="@style/TagGroup.Large"/>
+            </ScrollView>
 
         </FrameLayout>
 

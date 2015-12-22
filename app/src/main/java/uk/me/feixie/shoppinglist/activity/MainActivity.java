@@ -24,6 +24,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Spinner;
@@ -62,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
     private List<User> userList;
     private MyListAdapter mMyListAdapter;
     private int leftDrawerPosition;
+    private ImageView ivToolBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -122,6 +124,8 @@ public class MainActivity extends AppCompatActivity {
     private void initToolbar() {
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
+        ivToolBar = (ImageView) findViewById(R.id.ivToolbar);
+        getCurrentMonthToShow();
     }
 
     private void initViews() {
@@ -189,6 +193,7 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void onClick(View v) {
                                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                                builder.setTitle("Special Notice:");
                                 builder.setMessage(user.getNotice());
                                 builder.setPositiveButton("Ok", null);
                                 builder.show();
@@ -209,17 +214,17 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, final int position, long id) {
 
-                if (position!=0) {
+                if (position != 0) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                     builder.setTitle("Warning");
                     builder.setMessage("Are you sure you want to delete?");
-                    builder.setNegativeButton("Cancel",null);
+                    builder.setNegativeButton("Cancel", null);
                     builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             User user = userList.get(position);
                             List<ShopList> shopLists = mDbHelper.queryUserList(user.getId());
-                            if (shopLists.size()==0) {
+                            if (shopLists.size() == 0) {
                                 //                            System.out.println(user.toString());
                                 user.setShow(SHOW_GROUP_NOT);
 //                            System.out.println(user.toString());
@@ -228,7 +233,7 @@ public class MainActivity extends AppCompatActivity {
 //                            System.out.println(userList.size());
                                 mMyListAdapter.notifyDataSetChanged();
                             } else {
-                                UIUtils.showToast(MainActivity.this,"Please change or delete related shopping list first!");
+                                UIUtils.showToast(MainActivity.this, "Please change or delete related shopping list first!");
                             }
 
                         }
@@ -471,6 +476,52 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         pressed = 0;
+    }
+
+    private void getCurrentMonthToShow() {
+
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+        String date = formatter.format(new Date());
+        String dates[] = date.split("/");
+        int month = Integer.valueOf(dates[1]);
+        switch (month) {
+            case 1:
+                ivToolBar.setImageResource(R.drawable.jan);
+                break;
+            case 2:
+                ivToolBar.setImageResource(R.drawable.feb);
+                break;
+            case 3:
+                ivToolBar.setImageResource(R.drawable.march);
+                break;
+            case 4:
+                ivToolBar.setImageResource(R.drawable.apr);
+                break;
+            case 5:
+                ivToolBar.setImageResource(R.drawable.may);
+                break;
+            case 6:
+                ivToolBar.setImageResource(R.drawable.june);
+                break;
+            case 7:
+                ivToolBar.setImageResource(R.drawable.july);
+                break;
+            case 8:
+                ivToolBar.setImageResource(R.drawable.aug);
+                break;
+            case 9:
+                ivToolBar.setImageResource(R.drawable.sep);
+                break;
+            case 10:
+                ivToolBar.setImageResource(R.drawable.oct);
+                break;
+            case 11:
+                ivToolBar.setImageResource(R.drawable.nov);
+                break;
+            case 12:
+                ivToolBar.setImageResource(R.drawable.dec);
+                break;
+        }
     }
 
 
