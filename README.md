@@ -17,3 +17,5 @@ App features:<br>
 
 Any feedback is more than welcome.<br>
 
+<image src="https://cloud.githubusercontent.com/assets/11439385/11993672/bf5b1dec-aa2b-11e5-884e-e17b1d4e20a9.png"/>
+
