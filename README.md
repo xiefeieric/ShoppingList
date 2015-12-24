@@ -2,7 +2,7 @@
 An easy to use, multifunctional, location awareness shopping list app.
 
 App features:
-1.	Create shopping list
+1.	Create shopping list <br>
 2.	Add items by text input or voice input
 3.	Single click to indicate item bought or not bought
 4.	Can add price for item (long click item)
